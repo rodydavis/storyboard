@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:storyboard/storyboard.dart';
+import 'package:flutter_storyboard/flutter_storyboard.dart';
 
 void main() {
   runApp(MyApp());
