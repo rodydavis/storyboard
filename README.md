@@ -8,6 +8,8 @@ A Flutter Debug tool to see and test all your screens at once.
 
 Demo: https://rodydavis.github.io/storyboard/
 
+![screenshot](https://github.com/rodydavis/storyboard/blob/master/doc/screenshot.png?raw=true)
+
 ## Getting Started
 
 Wrap your MaterialApp with Storyboard.
