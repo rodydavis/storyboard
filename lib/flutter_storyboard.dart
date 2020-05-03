@@ -48,9 +48,11 @@ class StoryBoard extends StatefulWidget {
 class StoryboardController extends State<StoryBoard> {
   double _scale;
   Offset _offset;
+  FocusNode _focusNode;
 
   @override
   void initState() {
+    _focusNode = FocusNode();
     _scale = widget.initialScale;
     _scale ??= 0.75;
     _offset = widget.initialOffset;
