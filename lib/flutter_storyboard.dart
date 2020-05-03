@@ -1,6 +1,7 @@
 library storyboard;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const _kSpacing = 40.0;
 
@@ -48,9 +49,11 @@ class StoryBoard extends StatefulWidget {
 class StoryboardController extends State<StoryBoard> {
   double _scale;
   Offset _offset;
+  FocusNode _focusNode;
 
   @override
   void initState() {
+    _focusNode = FocusNode();
     _scale = widget.initialScale;
     _scale ??= 0.75;
     _offset = widget.initialOffset;
@@ -64,6 +67,12 @@ class StoryboardController extends State<StoryBoard> {
       if (mounted) setState(() {});
     }
     super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -95,48 +104,77 @@ class StoryboardController extends State<StoryBoard> {
                 ),
               ],
             ),
-        body: GestureDetector(
-          onPanUpdate: (panDetails) => updateOffset(panDetails.delta),
-          behavior: HitTestBehavior.opaque,
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            child: OverflowBox(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (base?.home != null)
-                    _addChild(
-                      base,
-                      base.home,
-                      Offset(0, 10),
-                      'Home',
-                    ),
-                  if (base?.initialRoute != null)
-                    _addChild(
-                      base,
-                      base.routes[base.initialRoute](context),
-                      Offset(
-                          base?.home != null ? _size.width + _kSpacing : 0, 10),
-                      'Initial Route',
-                    ),
-                  if (base?.routes != null) ...[
-                    for (var r = 0; r < base.routes.keys.length; r++)
+        body: RawKeyboardListener(
+          focusNode: _focusNode,
+          onKey: _handleKeyPress,
+          child: GestureDetector(
+            onPanUpdate: (panDetials) {
+              updateOffset(panDetials.delta);
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              child: OverflowBox(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (base?.home != null)
                       _addChild(
                         base,
-                        base.routes[base.routes.keys.toList()[r]](context),
-                        Offset((_size.width + _kSpacing) * r,
-                            (_size.height + _kSpacing) + 40),
-                        base.routes.keys.toList()[r],
+                        base.home,
+                        Offset(0, 10),
+                        'Home',
                       ),
-                  ]
-                ],
+                    if (base?.initialRoute != null)
+                      _addChild(
+                        base,
+                        base.routes[base.initialRoute](context),
+                        Offset(base?.home != null ? _size.width + _kSpacing : 0,
+                            10),
+                        'Initial Route',
+                      ),
+                    if (base?.routes != null) ...[
+                      for (var r = 0; r < base.routes.keys.length; r++)
+                        _addChild(
+                          base,
+                          base.routes[base.routes.keys.toList()[r]](context),
+                          Offset((_size.width + _kSpacing) * r,
+                              (_size.height + _kSpacing) + 40),
+                          base.routes.keys.toList()[r],
+                        ),
+                    ]
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleKeyPress(RawKeyEvent key) {
+    // Scale keys
+    if (key.isKeyPressed(LogicalKeyboardKey.minus)) {
+      updateScale(_scale - 0.02);
+    }
+    if (key.isKeyPressed(LogicalKeyboardKey.equal)) {
+      updateScale(_scale + 0.02);
+    }
+    // Directional Keys
+    if (key.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
+      updateOffset(Offset(15.0, 0.0));
+    }
+    if (key.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
+      updateOffset(Offset(-15.0, 0.0));
+    }
+    if (key.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
+      updateOffset(Offset(0.0, 15.0));
+    }
+    if (key.isKeyPressed(LogicalKeyboardKey.arrowDown)) {
+      updateOffset(Offset(0.0, -15.0));
+    }
   }
 
   void updateOffset(Offset value) {
