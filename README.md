@@ -15,8 +15,8 @@ Demo: https://rodydavis.github.io/storyboard/
 Wrap your MaterialApp with Storyboard.
 
 ```dart
-return StoryBoard(
-      child: MaterialApp.material(
+return StoryBoard.material(
+      child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Storyboard Example',
         theme: ThemeData.light().copyWith(
