@@ -6,6 +6,7 @@
 * Updated Example
 * Added Support for Keyboard Controls for Zoom/Pan @Nash0x7E2
 * Added Constraint on Flutter v1.14.7
+* Fixed MediaQuery #1
 
 ## 0.0.1
 
