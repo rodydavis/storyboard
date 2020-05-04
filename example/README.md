@@ -12,7 +12,7 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StoryBoard(
+    return StoryBoard.material(
       enabled: true,
       screenSize: Size(400, 700),
       child: MaterialApp(

@@ -36,7 +36,7 @@ return StoryBoard.material(
     );
 ```
 
-Wrap your WidgetsApp with Storyboard.custom().
+Wrap your WidgetsApp with Storyboard.widgets().
 Wrap your CupertinoApp with Storyboard.cupertino().
 
 ## Custom Routes and Widgets

@@ -49,7 +49,7 @@ class StoryBoard extends StatefulWidget {
         assert(child != null),
         super(key: key);
 
-  const StoryBoard.custom({
+  const StoryBoard.widgets({
     Key key,
     Widget child,
     this.enabled = true,
@@ -321,16 +321,24 @@ class StoryboardController extends State<StoryBoard> {
               title: Text('Storyboard'),
               actions: [
                 IconButton(
+                  icon: Icon(Icons.restore),
+                  onPressed: () {
+                    updateScale(0.75, true);
+                    updateOffset(Offset(10, -40), true);
+                  },
+                ),
+                VerticalDivider(),
+                IconButton(
                   icon: Icon(Icons.remove),
-                  onPressed: () => updateScale(_scale - 0.01),
+                  onPressed: () => updateScale(-0.01),
                 ),
                 InkWell(
                   child: Center(child: Text('${(_scale * 100).round()}%')),
-                  onTap: () => updateScale(1),
+                  onTap: () => updateScale(0.75, true),
                 ),
                 IconButton(
                   icon: Icon(Icons.add),
-                  onPressed: () => updateScale(_scale + 0.01),
+                  onPressed: () => updateScale(0.01),
                 ),
               ],
             ),
