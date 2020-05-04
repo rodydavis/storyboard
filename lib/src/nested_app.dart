@@ -3,15 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'media_query_observer.dart';
 
-class NestedApp extends StatelessWidget {
-  final Widget child;
-  final RouteSettings route;
-  final Size size;
-  final bool customWidget;
-  final MaterialApp materialApp;
-  final CupertinoApp cupertinoApp;
-  final WidgetsApp widgetsApp;
-
+class NestedApp extends StatefulWidget {
   const NestedApp({
     Key key,
     @required this.route,
@@ -23,98 +15,162 @@ class NestedApp extends StatelessWidget {
     @required this.child,
   }) : super(key: key);
 
+  final Widget child;
+  final CupertinoApp cupertinoApp;
+  final bool customWidget;
+  final MaterialApp materialApp;
+  final RouteSettings route;
+  final Size size;
+  final WidgetsApp widgetsApp;
+
+  @override
+  _NestedAppState createState() => _NestedAppState();
+}
+
+class _NestedAppState extends State<NestedApp> {
+  GlobalObjectKey<NavigatorState> _navKey;
+
+  @override
+  void initState() {
+    setup();
+    super.initState();
+  }
+
+  void setup() {
+    _navKey = GlobalObjectKey<NavigatorState>(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget?.route != null) {
+        _navKey.currentState.pushReplacementNamed(
+          widget.route.name,
+          arguments: widget.route?.arguments,
+        );
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(NestedApp oldWidget) {
+    if (oldWidget?.materialApp != widget?.materialApp) {
+      if (mounted) setState(() => setup());
+    }
+    if (oldWidget?.cupertinoApp != widget?.cupertinoApp) {
+      if (mounted) setState(() => setup());
+    }
+    if (oldWidget?.widgetsApp != widget?.widgetsApp) {
+      if (mounted) setState(() => setup());
+    }
+    // if (oldWidget?.route != widget?.route) {
+    //   if (mounted) setState(() => setup());
+    // }
+    super.didUpdateWidget(oldWidget);
+  }
+
   Map<String, WidgetBuilder> get routes {
-    if (materialApp != null) return materialApp?.routes;
-    if (widgetsApp != null) return widgetsApp?.routes;
-    if (cupertinoApp != null) return cupertinoApp?.routes;
+    if (widget.materialApp != null) return widget.materialApp?.routes;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.routes;
+    if (widget.cupertinoApp != null) return widget.cupertinoApp?.routes;
     return null;
   }
 
   Locale get locale {
-    if (materialApp != null) return materialApp?.locale;
-    if (widgetsApp != null) return widgetsApp?.locale;
-    if (cupertinoApp != null) return cupertinoApp?.locale;
+    if (widget.materialApp != null) return widget.materialApp?.locale;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.locale;
+    if (widget.cupertinoApp != null) return widget.cupertinoApp?.locale;
     return null;
   }
 
   Iterable<LocalizationsDelegate<dynamic>> get localizationsDelegates {
-    if (materialApp != null) return materialApp?.localizationsDelegates;
-    if (widgetsApp != null) return widgetsApp?.localizationsDelegates;
-    if (cupertinoApp != null) return cupertinoApp?.localizationsDelegates;
+    if (widget.materialApp != null)
+      return widget.materialApp?.localizationsDelegates;
+    if (widget.widgetsApp != null)
+      return widget.widgetsApp?.localizationsDelegates;
+    if (widget.cupertinoApp != null)
+      return widget.cupertinoApp?.localizationsDelegates;
     return null;
   }
 
   Iterable<Locale> get supportedLocales {
-    if (materialApp != null) return materialApp?.supportedLocales;
-    if (widgetsApp != null) return widgetsApp?.supportedLocales;
-    if (cupertinoApp != null) return cupertinoApp?.supportedLocales;
+    if (widget.materialApp != null) return widget.materialApp?.supportedLocales;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.supportedLocales;
+    if (widget.cupertinoApp != null)
+      return widget.cupertinoApp?.supportedLocales;
     return null;
   }
 
   LocaleResolutionCallback get localeResolutionCallback {
-    if (materialApp != null) return materialApp?.localeResolutionCallback;
-    if (widgetsApp != null) return widgetsApp?.localeResolutionCallback;
-    if (cupertinoApp != null) return cupertinoApp?.localeResolutionCallback;
+    if (widget.materialApp != null)
+      return widget.materialApp?.localeResolutionCallback;
+    if (widget.widgetsApp != null)
+      return widget.widgetsApp?.localeResolutionCallback;
+    if (widget.cupertinoApp != null)
+      return widget.cupertinoApp?.localeResolutionCallback;
     return null;
   }
 
   LocaleListResolutionCallback get localeListResolutionCallback {
-    if (materialApp != null) return materialApp?.localeListResolutionCallback;
-    if (widgetsApp != null) return widgetsApp?.localeListResolutionCallback;
-    if (cupertinoApp != null) return cupertinoApp?.localeListResolutionCallback;
+    if (widget.materialApp != null)
+      return widget.materialApp?.localeListResolutionCallback;
+    if (widget.widgetsApp != null)
+      return widget.widgetsApp?.localeListResolutionCallback;
+    if (widget.cupertinoApp != null)
+      return widget.cupertinoApp?.localeListResolutionCallback;
     return null;
   }
 
   Map<Type, Action<Intent>> get actions {
-    if (materialApp != null) return materialApp?.actions;
-    if (widgetsApp != null) return widgetsApp?.actions;
-    if (cupertinoApp != null) return cupertinoApp?.actions;
+    if (widget.materialApp != null) return widget.materialApp?.actions;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.actions;
+    if (widget.cupertinoApp != null) return widget.cupertinoApp?.actions;
     return null;
   }
 
   Map<LogicalKeySet, Intent> get shortcuts {
-    if (materialApp != null) return materialApp?.shortcuts;
-    if (widgetsApp != null) return widgetsApp?.shortcuts;
-    if (cupertinoApp != null) return cupertinoApp?.shortcuts;
+    if (widget.materialApp != null) return widget.materialApp?.shortcuts;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.shortcuts;
+    if (widget.cupertinoApp != null) return widget.cupertinoApp?.shortcuts;
     return null;
   }
 
   String get title {
-    if (materialApp != null) return materialApp?.title;
-    if (widgetsApp != null) return widgetsApp?.title;
-    if (cupertinoApp != null) return cupertinoApp?.title;
+    if (widget.materialApp != null) return widget.materialApp?.title;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.title;
+    if (widget.cupertinoApp != null) return widget.cupertinoApp?.title;
     return null;
   }
 
   String Function(BuildContext) get onGenerateTitle {
-    if (materialApp != null) return materialApp?.onGenerateTitle;
-    if (widgetsApp != null) return widgetsApp?.onGenerateTitle;
-    if (cupertinoApp != null) return cupertinoApp?.onGenerateTitle;
+    if (widget.materialApp != null) return widget.materialApp?.onGenerateTitle;
+    if (widget.widgetsApp != null) return widget.widgetsApp?.onGenerateTitle;
+    if (widget.cupertinoApp != null)
+      return widget.cupertinoApp?.onGenerateTitle;
     return null;
   }
 
   Widget builder(BuildContext context, Widget child) {
-    if (materialApp?.builder != null) return materialApp?.builder(context, child);
-    if (widgetsApp?.builder != null) return widgetsApp?.builder(context, child);
-    if (cupertinoApp?.builder != null) return cupertinoApp?.builder(context, child);
+    if (widget.materialApp?.builder != null)
+      return widget.materialApp?.builder(context, child);
+    if (widget.widgetsApp?.builder != null)
+      return widget.widgetsApp?.builder(context, child);
+    if (widget.cupertinoApp?.builder != null)
+      return widget.cupertinoApp?.builder(context, child);
     return child;
   }
 
   @override
   Widget build(BuildContext context) {
-    assert(child != null || route != null);
-    if (customWidget) {
+    assert(widget.child != null || widget.route != null);
+    if (widget.customWidget) {
       return MaterialApp(
-        theme: materialApp?.theme ?? ThemeData.light(),
-        darkTheme: materialApp?.darkTheme ?? ThemeData.dark(),
-        themeMode: materialApp?.themeMode ?? ThemeMode.system,
+        theme: widget.materialApp?.theme ?? ThemeData.light(),
+        darkTheme: widget.materialApp?.darkTheme ?? ThemeData.dark(),
+        themeMode: widget.materialApp?.themeMode ?? ThemeMode.system,
         debugShowCheckedModeBanner: false,
-        home: child,
+        home: widget.child,
         builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: size),
+          data: MediaQuery.of(context).copyWith(size: widget.size),
           child: builder(context, val),
         ),
-        color: materialApp?.color,
+        color: widget.materialApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
         supportedLocales: supportedLocales,
@@ -126,23 +182,25 @@ class NestedApp extends StatelessWidget {
         onGenerateTitle: onGenerateTitle,
       );
     }
-    if (materialApp != null) {
+
+    if (widget.materialApp != null) {
       return MaterialApp(
-        theme: materialApp?.theme ?? ThemeData.light(),
-        darkTheme: materialApp?.darkTheme ?? ThemeData.dark(),
-        themeMode: materialApp?.themeMode ?? ThemeMode.system,
+        navigatorKey: _navKey,
+        theme: widget.materialApp?.theme ?? ThemeData.light(),
+        darkTheme: widget.materialApp?.darkTheme ?? ThemeData.dark(),
+        themeMode: widget.materialApp?.themeMode ?? ThemeMode.system,
         debugShowCheckedModeBanner: false,
         routes: routes,
-        onGenerateRoute: materialApp?.onGenerateRoute,
-        onUnknownRoute: materialApp?.onUnknownRoute,
-        onGenerateInitialRoutes: materialApp?.onGenerateInitialRoutes,
-        home: child,
+        onGenerateRoute: widget.materialApp?.onGenerateRoute,
+        onUnknownRoute: widget.materialApp?.onUnknownRoute,
+        onGenerateInitialRoutes: widget.materialApp?.onGenerateInitialRoutes,
+        home: widget.child,
         builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: size),
+          data: MediaQuery.of(context).copyWith(size: widget.size),
           child: builder(context, val),
         ),
-        initialRoute: route?.name,
-        color: materialApp?.color,
+        // initialRoute: route?.name,
+        color: widget.materialApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
         supportedLocales: supportedLocales,
@@ -154,21 +212,22 @@ class NestedApp extends StatelessWidget {
         onGenerateTitle: onGenerateTitle,
       );
     }
-    if (cupertinoApp != null) {
+    if (widget.cupertinoApp != null) {
       return CupertinoApp(
-        theme: cupertinoApp?.theme ?? CupertinoThemeData(),
+        navigatorKey: _navKey,
+        theme: widget.cupertinoApp?.theme ?? CupertinoThemeData(),
         debugShowCheckedModeBanner: false,
         routes: routes,
-        onGenerateRoute: cupertinoApp?.onGenerateRoute,
-        onUnknownRoute: cupertinoApp?.onUnknownRoute,
-        onGenerateInitialRoutes: cupertinoApp?.onGenerateInitialRoutes,
-        home: child,
+        onGenerateRoute: widget.cupertinoApp?.onGenerateRoute,
+        onUnknownRoute: widget.cupertinoApp?.onUnknownRoute,
+        onGenerateInitialRoutes: widget.cupertinoApp?.onGenerateInitialRoutes,
+        home: widget.child,
         builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: size),
+          data: MediaQuery.of(context).copyWith(size: widget.size),
           child: builder(context, val),
         ),
-        initialRoute: route?.name,
-        color: cupertinoApp?.color,
+        // initialRoute: route?.name,
+        color: widget.cupertinoApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
         supportedLocales: supportedLocales,
@@ -180,20 +239,21 @@ class NestedApp extends StatelessWidget {
         onGenerateTitle: onGenerateTitle,
       );
     }
-    if (widgetsApp != null) {
+    if (widget.widgetsApp != null) {
       return WidgetsApp(
+        navigatorKey: _navKey,
         debugShowCheckedModeBanner: false,
         routes: routes,
-        onGenerateRoute: widgetsApp?.onGenerateRoute,
-        onUnknownRoute: widgetsApp?.onUnknownRoute,
-        onGenerateInitialRoutes: widgetsApp?.onGenerateInitialRoutes,
-        home: child,
+        onGenerateRoute: widget.widgetsApp?.onGenerateRoute,
+        onUnknownRoute: widget.widgetsApp?.onUnknownRoute,
+        onGenerateInitialRoutes: widget.widgetsApp?.onGenerateInitialRoutes,
+        home: widget.child,
         builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: size),
+          data: MediaQuery.of(context).copyWith(size: widget.size),
           child: builder(context, val),
         ),
-        initialRoute: route?.name,
-        color: widgetsApp?.color,
+        // initialRoute: route?.name,
+        color: widget.widgetsApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
         supportedLocales: supportedLocales,
@@ -205,6 +265,6 @@ class NestedApp extends StatelessWidget {
         onGenerateTitle: onGenerateTitle,
       );
     }
-    return child;
+    return widget.child;
   }
 }

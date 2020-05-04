@@ -12,6 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoryBoard.material(
       enabled: true,
+      usePreferences: true,
       screenSize: Size(400, 700),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
