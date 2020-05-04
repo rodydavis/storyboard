@@ -3,6 +3,7 @@
 * Added Locale Support
 * Added Title, onGenerateTitle
 * Added builder, shortcuts, actions
+* Bug Fixes
 
 ## 0.0.2
 

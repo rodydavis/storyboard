@@ -16,9 +16,7 @@ Wrap your MaterialApp with Storyboard.
 
 ```dart
 return StoryBoard(
-      // enabled: true,
-      // screenSize: Size(400, 700),
-      child: MaterialApp(
+      child: MaterialApp.material(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Storyboard Example',
         theme: ThemeData.light().copyWith(
@@ -38,4 +36,24 @@ return StoryBoard(
     );
 ```
 
-Now you can test all you screens with hot reload! You can also disable the widget at anytime by setting `enabled` to [false].
+Wrap your WidgetsApp with Storyboard.custom().
+Wrap your CupertinoApp with Storyboard.cupertino().
+
+## Custom Routes and Widgets
+
+You can add any number of custom widgets to the canvas, including custom routes. You can add dummy data to the constructors here as it will render all default values.
+
+```dart
+customScreens: [
+  SettingsScreen(),
+  AboutScreen(),
+  CustomWidget(title: 'Dummy Data'),
+],
+customRoutes: [
+  RouteSettings(name: '/about'),
+],
+```
+
+## Misc
+
+Now you can test all you screens with hot reload! You can also disable the widget at anytime by setting `enabled` to false. You will need to do a hot restart after you change this value.
