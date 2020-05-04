@@ -28,11 +28,12 @@ class MyApp extends StatelessWidget {
         initialRoute: '/settings',
         routes: {
           '/': (_) => HomeScreen(),
+          '/counter': (_) => CounterScreen(),
           '/settings': (_) => SettingsScreen(),
           for (var i = 0; i < 25; i++)
             '/screen_$i': (_) => _generateScreen(
                   title: Text('Screen$i'),
-                  body: Container(color: RandomColor(i).randomColor()),
+                  color: RandomColor(i).randomColor(),
                 ),
         },
         onGenerateRoute: (settings) {
@@ -49,11 +50,18 @@ class MyApp extends StatelessWidget {
         for (var i = 0; i < 25; i++)
           _generateScreen(
             title: Text('Screen$i'),
-            body: Container(color: RandomColor(i + 25).randomColor()),
+            color: RandomColor(i + 25).randomColor(),
           ),
       ],
       customRoutes: [
         RouteSettings(name: '/about'),
+        RouteSettings(name: '/counter'),
+        RouteSettings(name: '/screen_2'),
+        RouteSettings(name: '/screen_5'),
+        RouteSettings(
+          name: '/screen_8',
+          arguments: <String, dynamic>{"id": 1234},
+        ),
       ],
     );
   }
@@ -62,14 +70,19 @@ class MyApp extends StatelessWidget {
 Widget _generateScreen({
   Text title,
   FloatingActionButton fab,
-  Widget body,
+  Color color,
 }) {
   return Builder(
-    builder: (context) => Scaffold(
-      appBar: AppBar(title: title),
-      body: body,
-      floatingActionButton: fab,
-    ),
+    builder: (context) {
+      final Map<String, dynamic> args =
+          ModalRoute.of(context).settings.arguments;
+      return Scaffold(
+        appBar: AppBar(title: title),
+        backgroundColor: color,
+        body: args == null ? null : Center(child: Text(args.toString())),
+        floatingActionButton: fab,
+      );
+    },
   );
 }
 
@@ -87,11 +100,42 @@ class HomeScreen extends StatelessWidget {
         child: Text(_size.toString()),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
+        child: Icon(Icons.info),
         onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => SettingsScreen(),
           ));
+        },
+      ),
+    );
+  }
+}
+
+class CounterScreen extends StatefulWidget {
+  const CounterScreen({Key key}) : super(key: key);
+
+  @override
+  _CounterScreenState createState() => _CounterScreenState();
+}
+
+class _CounterScreenState extends State<CounterScreen> {
+  int _counter = 0;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Counter Example'),
+      ),
+      body: Center(
+        child: Text('Counter: $_counter'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.add),
+        onPressed: () {
+          if (mounted)
+            setState(() {
+              _counter++;
+            });
         },
       ),
     );

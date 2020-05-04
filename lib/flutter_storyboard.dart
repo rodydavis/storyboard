@@ -153,7 +153,7 @@ class StoryboardController extends State<StoryBoard> {
     _focusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       updateScale(widget?.initialScale ?? 0.75, true);
-      updateOffset(widget?.initialOffset ?? Offset(10, -40), true);
+      updateOffset(widget?.initialOffset ?? Offset(10, -_kSpacing), true);
     });
     if (widget.usePreferences) {
       SharedPreferences.getInstance().then((value) {
@@ -207,17 +207,21 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   Offset _getOffset(Size _size, int row, [int i = 1]) {
-    return Offset((_size.width + _kSpacing) * i,
-        (((_size.height + _kSpacing + 40) * row)));
+    final spacing = _kSpacing;
+    final h = _size.height;
+    final w = _size.width;
+    final _dx = ((w + spacing) * i);
+    final _dy = (h + spacing + spacing) * row;
+    return Offset(_dx, _dy);
   }
 
   void _handleKeyPress(RawKeyEvent key) {
     // Scale keys
     if (key.isKeyPressed(LogicalKeyboardKey.minus)) {
-      updateScale(_scale - 0.02);
+      updateScale(-0.02);
     }
     if (key.isKeyPressed(LogicalKeyboardKey.equal)) {
-      updateScale(_scale + 0.02);
+      updateScale(0.02);
     }
     // Directional Keys
     if (key.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
@@ -259,8 +263,31 @@ class StoryboardController extends State<StoryBoard> {
     _prefs?.setDouble(_scaleKey, _scale);
   }
 
-  List<Widget> _addRow(int place, List<Widget> Function(int) children) =>
-      children(_row++);
+  List<Widget> _addRow(int place, List<Widget> Function(int) children) {
+    return children(_row++);
+  }
+
+  Positioned _addPosChild({
+    Offset offset = Offset.zero,
+    Widget child,
+    double width,
+    double height,
+    AlignmentGeometry alignment,
+  }) {
+    final _top = _offset.dy + (_scale * offset.dy);
+    final _left = _offset.dx + (_scale * offset.dx);
+    return Positioned(
+      top: _top,
+      left: _left,
+      width: width,
+      height: height,
+      child: Transform.scale(
+        scale: _scale,
+        child: child,
+        alignment: alignment ?? Alignment.center,
+      ),
+    );
+  }
 
   Positioned _addChild(
     RouteSettings route, {
@@ -269,38 +296,32 @@ class StoryboardController extends State<StoryBoard> {
     Widget child,
     bool customWidget = false,
   }) {
-    final _top = _offset.dy + (_scale * offset.dy);
-    final _left = _offset.dx + (_scale * offset.dx);
     final _size = widget.screenSize;
-    return Positioned(
-      top: _top,
-      left: _left,
-      child: Transform.scale(
-        scale: _scale,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox.fromSize(
-              size: _size,
-              child: Material(
-                elevation: 4,
-                child: ClipRect(
-                  clipper: CustomRect(Offset(0, 0)),
-                  child: NestedApp(
-                    route: route,
-                    child: child,
-                    size: _size,
-                    customWidget: customWidget,
-                    materialApp: materialApp,
-                    cupertinoApp: cupertinoApp,
-                    widgetsApp: widgetsApp,
-                  ),
+    return _addPosChild(
+      offset: offset,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox.fromSize(
+            size: _size,
+            child: Material(
+              elevation: 4,
+              child: ClipRect(
+                clipper: CustomRect(Offset(0, 0)),
+                child: NestedApp(
+                  route: route,
+                  child: child,
+                  size: _size,
+                  customWidget: customWidget,
+                  materialApp: materialApp,
+                  cupertinoApp: cupertinoApp,
+                  widgetsApp: widgetsApp,
                 ),
               ),
             ),
-            if (label != null) Center(child: RoundedLabel(label)),
-          ],
-        ),
+          ),
+          if (label != null) Center(child: RoundedLabel(label)),
+        ],
       ),
     );
   }
@@ -324,7 +345,7 @@ class StoryboardController extends State<StoryBoard> {
                   icon: Icon(Icons.restore),
                   onPressed: () {
                     updateScale(0.75, true);
-                    updateOffset(Offset(10, -40), true);
+                    updateOffset(Offset(10, -_kSpacing), true);
                   },
                 ),
                 VerticalDivider(),
@@ -363,18 +384,15 @@ class StoryboardController extends State<StoryBoard> {
                               if (home != null)
                                 _addChild(
                                   null,
-                                  offset: Offset(0, 10),
+                                  offset: _getOffset(_size, row, 0),
                                   label: 'Home',
                                   child: home,
                                 ),
                               if (initialRoute != null)
                                 _addChild(
                                   RouteSettings(name: initialRoute),
-                                  offset: Offset(
-                                      home != null
-                                          ? ((_size.width + _kSpacing) * 1)
-                                          : 0,
-                                      10),
+                                  offset: _getOffset(
+                                      _size, row, home != null ? 1 : 0),
                                   label: 'Initial Route',
                                 ),
                             ]),
