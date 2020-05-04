@@ -392,7 +392,6 @@ class StoryboardController extends State<StoryBoard> {
                     materialApp: materialApp,
                     cupertinoApp: cupertinoApp,
                     widgetsApp: widgetsApp,
-                    routes: routes,
                   ),
                 ),
               ),

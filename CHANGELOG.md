@@ -1,3 +1,9 @@
+## 0.0.3
+
+* Added Locale Support
+* Added Title, onGenerateTitle
+* Added builder, shortcuts, actions
+
 ## 0.0.2
 
 * Adding onGenerateRoute, onUnknownRoute, initialRoute
