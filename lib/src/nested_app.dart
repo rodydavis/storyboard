@@ -94,10 +94,10 @@ class NestedApp extends StatelessWidget {
   }
 
   Widget builder(BuildContext context, Widget child) {
-    if (materialApp != null) return materialApp?.builder(context, child);
-    if (widgetsApp != null) return widgetsApp?.builder(context, child);
-    if (cupertinoApp != null) return cupertinoApp?.builder(context, child);
-    return null;
+    if (materialApp?.builder != null) return materialApp?.builder(context, child);
+    if (widgetsApp?.builder != null) return widgetsApp?.builder(context, child);
+    if (cupertinoApp?.builder != null) return cupertinoApp?.builder(context, child);
+    return child;
   }
 
   @override
