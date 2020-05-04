@@ -1,12 +1,13 @@
 name: flutter_storyboard
 description: A new Flutter package project.
-version: 0.0.1
+version: 0.0.2
 author: Rody Davis <rody.davis.jr@gmail.com>
 maintainer: Rody Davis (@rodydavis)
 homepage: https://github.com/rodydavis/storyboard
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
+  flutter: ^1.14.7
 
 dependencies:
   flutter:

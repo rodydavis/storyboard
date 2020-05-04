@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_storyboard/flutter_storyboard.dart';
+import 'package:random_color/random_color.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,7 +10,7 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StoryBoard(
+    return StoryBoard.material(
       enabled: true,
       screenSize: Size(400, 700),
       child: MaterialApp(
@@ -22,15 +23,53 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         themeMode: ThemeMode.light,
-        home: HomeScreen(),
+        // home: HomeScreen(),
+        initialRoute: '/settings',
         routes: {
-          '/home': (_) => HomeScreen(),
-          '/about': (_) => AboutScreen(),
+          '/': (_) => HomeScreen(),
           '/settings': (_) => SettingsScreen(),
+          for (var i = 0; i < 25; i++)
+            '/screen_$i': (_) => _generateScreen(
+                  title: Text('Screen$i'),
+                  body: Container(color: RandomColor(i).randomColor()),
+                ),
+        },
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (context) {
+              if (settings.name == '/about') return AboutScreen();
+              return UnknownScreen();
+            },
+          );
         },
       ),
+      customScreens: [
+        for (var i = 0; i < 25; i++)
+          _generateScreen(
+            title: Text('Screen$i'),
+            body: Container(color: RandomColor(i + 25).randomColor()),
+          ),
+      ],
+      customRoutes: [
+        RouteSettings(name: '/about'),
+      ],
     );
   }
+}
+
+Widget _generateScreen({
+  Text title,
+  FloatingActionButton fab,
+  Widget body,
+}) {
+  return Builder(
+    builder: (context) => Scaffold(
+      appBar: AppBar(title: title),
+      body: body,
+      floatingActionButton: fab,
+    ),
+  );
 }
 
 class HomeScreen extends StatelessWidget {
@@ -38,9 +77,13 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final _size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: Text('Home Screen'),
+      ),
+      body: Center(
+        child: Text(_size.toString()),
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
@@ -72,6 +115,18 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('About'),
+      ),
+      backgroundColor: Colors.purple.shade300,
+    );
+  }
+}
+
+class UnknownScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('404'),
       ),
       backgroundColor: Colors.red.shade300,
     );
