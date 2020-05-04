@@ -13,8 +13,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StoryBoard.material(
-      enabled: true,
-      screenSize: Size(400, 700),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Flutter Storyboard Example',

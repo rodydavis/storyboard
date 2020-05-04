@@ -1,3 +1,12 @@
+## 0.0.4
+
+* Adding Support for Route Arguments
+* Adding Shared Preferences Option
+* Fixing Bug with Android Back Button
+* Removing Callbacks
+* Fixing Initial Route Presentation
+* Updated Example
+
 ## 0.0.3
 
 * Added Locale Support
