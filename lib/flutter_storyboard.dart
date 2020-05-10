@@ -10,7 +10,7 @@ import 'src/nested_app.dart';
 import 'src/rounded_label.dart';
 
 const _kSpacing = 40.0;
-const _kLabelHeight = 55.0;
+const _kLabelHeight = 65.0;
 const _kTitle = 'Storyboard';
 
 typedef LaneBuilder = Widget Function(
@@ -362,12 +362,21 @@ class StoryboardController extends State<StoryBoard> {
   }) {
     final _size = widget.screenSize;
     if (widget.screenBuilder != null) {
-      return Container(
+      return Material(
         child: widget.screenBuilder(
           context,
           route,
-          Material(
-            elevation: 4,
+          Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF000000),
+                  offset: Offset(20.0, 10.0),
+                  blurRadius: 20.0,
+                  spreadRadius: 40.0,
+                )
+              ],
+            ),
             child: SizedBox.fromSize(
               size: _size,
               child: ClipRect(
@@ -527,7 +536,14 @@ class StoryboardController extends State<StoryBoard> {
                                   title: 'Custom Screens',
                                   scale: _scale,
                                   size: size,
-                                  children: widget.children,
+                                  children: widget.children
+                                      .map((e) => _addChild(
+                                            null,
+                                            label: null,
+                                            child: e,
+                                            customWidget: true,
+                                          ))
+                                      .toList(),
                                   crossAxisCount: widget.crossAxisCount,
                                 ),
                               if (widget.customRoutes != null)
@@ -555,7 +571,14 @@ class StoryboardController extends State<StoryBoard> {
                                     scale: _scale,
                                     size: size,
                                     crossAxisCount: widget.crossAxisCount,
-                                    children: lane.children,
+                                    children: lane.children
+                                        .map((e) => _addChild(
+                                              null,
+                                              label: null,
+                                              child: e,
+                                              customWidget: true,
+                                            ))
+                                        .toList(),
                                   ),
                             ],
                           ),
@@ -672,24 +695,27 @@ class _Lane extends StatelessWidget {
 
   Widget buildGridLane(
       Size gridSize, List<Widget> _children, BuildContext context) {
-    return SizedBox.fromSize(
-      size: gridSize,
-      child: GridView(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount ?? children.length,
-          crossAxisSpacing: _kSpacing,
-          mainAxisSpacing: _kSpacing,
-          childAspectRatio: size.width / size.height,
+    return Container(
+      margin: EdgeInsets.all(_kSpacing / 2),
+      child: SizedBox.fromSize(
+        size: gridSize,
+        child: GridView(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount ?? children.length,
+            crossAxisSpacing: _kSpacing,
+            mainAxisSpacing: _kSpacing,
+            childAspectRatio: size.width / size.height,
+          ),
+          children: _children.map((e) {
+            Widget _child = SizedBox.fromSize(size: size, child: e);
+            if (itemBuilder != null) {
+              _child = itemBuilder(context, _child);
+            }
+            return Center(child: _child);
+          }).toList(),
         ),
-        children: _children.map((e) {
-          Widget _child = SizedBox.fromSize(size: size, child: e);
-          if (itemBuilder != null) {
-            _child = itemBuilder(context, _child);
-          }
-          return Center(child: _child);
-        }).toList(),
       ),
     );
   }
@@ -697,6 +723,7 @@ class _Lane extends StatelessWidget {
   Widget buildWrapLane(int _rows, List<Widget> _children, int _itemsPerRow,
       BuildContext context) {
     return Container(
+      margin: EdgeInsets.all(_kSpacing / 2),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.start,

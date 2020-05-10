@@ -1,3 +1,7 @@
+## 0.1.2
+
+* Adding Shadows for Dark Mode
+
 ## 0.1.1
 
 * Adding customLanes so you have total control
