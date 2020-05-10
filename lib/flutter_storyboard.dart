@@ -22,7 +22,6 @@ class StoryBoard extends StatefulWidget {
   const StoryBoard({
     Key key,
     @required this.children,
-    this.enabled = true,
     bool showAppBar = false,
     Size childSize,
     this.initialOffset,
@@ -41,6 +40,7 @@ class StoryBoard extends StatefulWidget {
         screenSize = childSize,
         customRoutes = null,
         hideAppBar = !showAppBar,
+        enabled = true,
         super(key: key);
 
   const StoryBoard.app({

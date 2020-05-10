@@ -10,7 +10,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StoryBoard(
-      enabled: true,
       usePreferences: true,
       showAppBar: true,
       children: [
