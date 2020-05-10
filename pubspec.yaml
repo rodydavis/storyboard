@@ -13,6 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^0.5.7
+  device_preview: ^0.4.4
 
 dev_dependencies:
   flutter_test:

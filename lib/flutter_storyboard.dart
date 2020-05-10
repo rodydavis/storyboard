@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:device_preview/device_preview.dart' as device;
+
 import 'src/custom_rect_clipper.dart';
 import 'src/nested_app.dart';
 import 'src/rounded_label.dart';
@@ -24,6 +26,7 @@ class StoryBoard extends StatefulWidget {
     @required this.children,
     bool showAppBar = false,
     Size childSize,
+    this.initialDevice,
     this.initialOffset,
     this.customLanes,
     this.initialScale,
@@ -50,6 +53,7 @@ class StoryBoard extends StatefulWidget {
     CupertinoApp cupertinoApp,
     List<Widget> customScreens,
     this.enabled = true,
+    this.initialDevice,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.initialScale,
@@ -76,6 +80,7 @@ class StoryBoard extends StatefulWidget {
     Widget child,
     List<Widget> customScreens,
     this.enabled = true,
+    this.initialDevice,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.customLanes,
@@ -101,6 +106,7 @@ class StoryBoard extends StatefulWidget {
     Widget child,
     List<Widget> customScreens,
     this.enabled = true,
+    this.initialDevice,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.initialScale,
@@ -128,6 +134,7 @@ class StoryBoard extends StatefulWidget {
     this.enabled = true,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
+    this.initialDevice,
     this.initialScale,
     this.customLanes,
     this.screenBuilder,
@@ -200,6 +207,8 @@ class StoryBoard extends StatefulWidget {
   // /// Max lane width instead of crossAxisCount
   // final double maxLaneWidth;
 
+  final device.Device initialDevice;
+
   final bool _widgets;
 
   @override
@@ -208,12 +217,15 @@ class StoryBoard extends StatefulWidget {
 
 class StoryboardController extends State<StoryBoard> {
   FocusNode _focusNode;
+  UniqueKey _key = UniqueKey();
+  device.Device _device;
   Offset _offset = Offset.zero;
   String _offsetKey = 'flutter_storyboard_offset';
   SharedPreferences _prefs;
   int _row = 0;
   double _scale = 1;
   String _scaleKey = 'flutter_storyboard_scale';
+  String _deviceKey = 'flutter_storyboard_device';
 
   @override
   void didUpdateWidget(StoryBoard oldWidget) {
@@ -229,6 +241,11 @@ class StoryboardController extends State<StoryBoard> {
     super.didUpdateWidget(oldWidget);
   }
 
+  void restart() {
+    _key = UniqueKey();
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _focusNode.dispose();
@@ -237,6 +254,7 @@ class StoryboardController extends State<StoryBoard> {
 
   @override
   void initState() {
+    _device = widget.initialDevice;
     _focusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       updateScale(widget?.initialScale ?? 0.75, true);
@@ -248,6 +266,10 @@ class StoryboardController extends State<StoryBoard> {
         final _savedScale = _prefs.getDouble(_scaleKey);
         if (_savedScale != null) {
           updateScale(_savedScale, true);
+        }
+        final _savedDevice = _prefs.getInt(_deviceKey);
+        if (_savedDevice != null) {
+          updateDevice(device.Devices.all[_savedDevice]);
         }
         final _savedOffsetDx = _prefs.getDouble('$_offsetKey\_dx');
         final _savedOffsetDy = _prefs.getDouble('$_offsetKey\_dy');
@@ -341,16 +363,32 @@ class StoryboardController extends State<StoryBoard> {
     _prefs?.setDouble(_scaleKey, _scale);
   }
 
+  void updateDevice(device.Device value) {
+    if (mounted)
+      setState(() {
+        _device = value;
+      });
+    _prefs?.setInt(
+      _deviceKey,
+      value == null ? null : device.Devices.all.indexOf(value),
+    );
+  }
+
   Size get size {
     if (widget.screenBuilder != null) {
       return widget.screenSize;
     }
+    // if (_device != null) {
+    //   final s = _device.portrait.size;
+    //   return Size(s.width + 50, s.height + 50);
+    // }
     if (widget.screenSize != null) {
       return Size(
         widget.screenSize.width,
         widget.screenSize.height + _kLabelHeight,
       );
     }
+
     return null;
   }
 
@@ -360,9 +398,40 @@ class StoryboardController extends State<StoryBoard> {
     Widget child,
     bool customWidget = false,
   }) {
-    final _size = widget.screenSize;
+    if (_device != null) {
+      return SizedBox.fromSize(
+        size: size,
+        child: Stack(
+          fit: StackFit.expand,
+          overflow: Overflow.visible,
+          children: [
+            // Positioned(
+            //   top: 25,
+            //   left: 25,
+            //   bottom: 25,
+            //   right: 25,
+            //   child: _buildApp(route, child, size, customWidget),
+            // ),
+            Positioned(
+              top: -25,
+              left: -25,
+              bottom: -75,
+              right: -75,
+              child: Container(
+                child: _device.frameBuilder(
+                  context,
+                  _buildApp(route, child, size, customWidget),
+                  Size(size.width, size.height),
+                  device.DeviceOrientation.portrait,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     if (widget.screenBuilder != null) {
-      return Material(
+      return Container(
         child: widget.screenBuilder(
           context,
           route,
@@ -378,19 +447,8 @@ class StoryboardController extends State<StoryBoard> {
               ],
             ),
             child: SizedBox.fromSize(
-              size: _size,
-              child: ClipRect(
-                clipper: CustomRect(Offset(0, 0)),
-                child: NestedApp(
-                  route: route,
-                  child: child,
-                  size: _size,
-                  customWidget: customWidget,
-                  materialApp: materialApp,
-                  cupertinoApp: cupertinoApp,
-                  widgetsApp: widgetsApp,
-                ),
-              ),
+              size: size,
+              child: _buildApp(route, child, size, customWidget),
             ),
           ),
         ),
@@ -402,28 +460,33 @@ class StoryboardController extends State<StoryBoard> {
         Material(
           elevation: 4,
           child: SizedBox.fromSize(
-            size: _size,
-            child: ClipRect(
-              clipper: CustomRect(Offset(0, 0)),
-              child: NestedApp(
-                route: route,
-                child: child,
-                size: _size,
-                customWidget: customWidget,
-                materialApp: materialApp,
-                cupertinoApp: cupertinoApp,
-                widgetsApp: widgetsApp,
-              ),
-            ),
+            size: size,
+            child: _buildApp(route, child, size, customWidget),
           ),
         ),
         if (label != null)
           Container(
             height: _kLabelHeight,
-            width: _size.width,
+            width: size.width,
             child: Center(child: RoundedLabel(label)),
           ),
       ],
+    );
+  }
+
+  ClipRect _buildApp(
+      RouteSettings route, Widget child, Size _size, bool customWidget) {
+    return ClipRect(
+      clipper: CustomRect(Offset(0, 0)),
+      child: NestedApp(
+        route: route,
+        child: child,
+        size: _size,
+        customWidget: customWidget,
+        materialApp: materialApp,
+        cupertinoApp: cupertinoApp,
+        widgetsApp: widgetsApp,
+      ),
     );
   }
 
@@ -431,6 +494,7 @@ class StoryboardController extends State<StoryBoard> {
   Widget build(BuildContext context) {
     if (!widget.enabled) return app;
     return MaterialApp(
+      key: _key,
       debugShowCheckedModeBanner: false,
       themeMode: materialApp?.themeMode ?? ThemeMode.system,
       theme: materialApp?.theme ?? ThemeData.light(),
@@ -602,12 +666,34 @@ class StoryboardController extends State<StoryBoard> {
             AppBar(
               title: Text(_kTitle),
               actions: [
+                DropdownButton<device.Device>(
+                  value: _device,
+                  items: [
+                    for (final device in device.Devices.all)
+                      DropdownMenuItem(
+                        value: device,
+                        child: Text(device.name),
+                      ),
+                  ],
+                  onChanged: (val) {
+                    updateDevice(val);
+                  },
+                ),
                 IconButton(
+                  tooltip: 'Restart App',
+                  icon: Icon(Icons.refresh),
+                  onPressed: () {
+                    restart();
+                  },
+                ),
+                IconButton(
+                  tooltip: 'Reset to Defaults',
                   icon: Icon(Icons.restore),
                   onPressed: () {
                     updateScale(widget?.initialScale ?? 0.75, true);
                     updateOffset(
                         widget?.initialOffset ?? Offset(10, -_kSpacing), true);
+                    updateDevice(widget?.initialDevice);
                   },
                 ),
                 VerticalDivider(),
