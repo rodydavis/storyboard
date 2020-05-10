@@ -1,3 +1,8 @@
+## 0.1.1
+
+* Adding customLanes so you have total control
+* Added Example
+
 ## 0.1.0
 
 * Adding Custom Lane Builder

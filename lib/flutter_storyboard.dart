@@ -26,6 +26,7 @@ class StoryBoard extends StatefulWidget {
     bool showAppBar = false,
     Size childSize,
     this.initialOffset,
+    this.customLanes,
     this.initialScale,
     this.usePreferences = false,
     this.customAppBar,
@@ -52,6 +53,7 @@ class StoryBoard extends StatefulWidget {
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.initialScale,
+    this.customLanes,
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
@@ -76,6 +78,7 @@ class StoryBoard extends StatefulWidget {
     this.enabled = true,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
+    this.customLanes,
     this.initialScale,
     this.usePreferences = false,
     this.customAppBar,
@@ -101,6 +104,7 @@ class StoryBoard extends StatefulWidget {
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.initialScale,
+    this.customLanes,
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
@@ -125,6 +129,7 @@ class StoryBoard extends StatefulWidget {
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.initialScale,
+    this.customLanes,
     this.screenBuilder,
     this.usePreferences = false,
     this.customAppBar,
@@ -149,6 +154,9 @@ class StoryBoard extends StatefulWidget {
 
   /// Custom screens you want to show
   final List<Widget> children;
+
+  /// List of custom lanes
+  final List<CustomLane> customLanes;
 
   /// You can disable this widget at any time and just return the child
   final bool enabled;
@@ -337,10 +345,13 @@ class StoryboardController extends State<StoryBoard> {
     if (widget.screenBuilder != null) {
       return widget.screenSize;
     }
-    return Size(
-      widget.screenSize.width,
-      widget.screenSize.height + _kLabelHeight,
-    );
+    if (widget.screenSize != null) {
+      return Size(
+        widget.screenSize.width,
+        widget.screenSize.height + _kLabelHeight,
+      );
+    }
+    return null;
   }
 
   Widget _addChild(
@@ -439,13 +450,28 @@ class StoryboardController extends State<StoryBoard> {
                         child: Transform.scale(
                           scale: _scale,
                           alignment: Alignment.topLeft,
-                          child: _Lane(
-                            laneBuilder: widget.laneBuilder,
-                            title: 'Children',
-                            scale: _scale,
-                            size: widget.screenSize,
-                            children: widget.children,
-                            crossAxisCount: widget.crossAxisCount,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Lane(
+                                laneBuilder: widget.laneBuilder,
+                                title: 'Children',
+                                scale: _scale,
+                                size: size,
+                                children: widget.children,
+                                crossAxisCount: widget.crossAxisCount,
+                              ),
+                              if (widget.customLanes != null)
+                                for (final lane in widget.customLanes)
+                                  _Lane(
+                                    laneBuilder: widget.laneBuilder,
+                                    title: lane.title,
+                                    scale: _scale,
+                                    size: size,
+                                    crossAxisCount: widget.crossAxisCount,
+                                    children: lane.children,
+                                  ),
+                            ],
                           ),
                         ),
                       ),
@@ -521,6 +547,16 @@ class StoryboardController extends State<StoryBoard> {
                                       ),
                                   ],
                                 ),
+                              if (widget.customLanes != null)
+                                for (final lane in widget.customLanes)
+                                  _Lane(
+                                    laneBuilder: widget.laneBuilder,
+                                    title: lane.title,
+                                    scale: _scale,
+                                    size: size,
+                                    crossAxisCount: widget.crossAxisCount,
+                                    children: lane.children,
+                                  ),
                             ],
                           ),
                         ),
@@ -569,6 +605,16 @@ class StoryboardController extends State<StoryBoard> {
   }
 }
 
+class CustomLane {
+  final String title;
+  final List<Widget> children;
+
+  CustomLane({
+    @required this.title,
+    @required this.children,
+  });
+}
+
 class _Lane extends StatelessWidget {
   const _Lane({
     Key key,
@@ -610,20 +656,6 @@ class _Lane extends StatelessWidget {
     }
     Widget _child;
     if (size == null) {
-      // if (maxWidth != null) {
-      //   _child = Container(
-      //     width: maxWidth,
-      //     child: Wrap(
-      //       alignment: WrapAlignment.start,
-      //       crossAxisAlignment: WrapCrossAlignment.start,
-      //       spacing: _kSpacing,
-      //       runSpacing: _kSpacing,
-      //       children: _children,
-      //     ),
-      //   );
-      // } else {
-      //   _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
-      // }
       _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
     } else {
       final _gridSize = Size(

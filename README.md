@@ -20,6 +20,8 @@ Demo: https://rodydavis.github.io/storyboard/
 
 [Widget Example](https://github.com/rodydavis/storyboard/blob/master/example/lib/examples/widget_example.dart)
 
+[Multiple Custom Lanes Example](https://github.com/rodydavis/storyboard/blob/master/example/lib/examples/complete_custom_lanes_builder.dart)
+
 ## Getting Started
 
 Wrap your MaterialApp with Storyboard.
