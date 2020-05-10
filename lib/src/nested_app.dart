@@ -1,3 +1,4 @@
+import 'package:device_preview/device_preview.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,8 @@ class NestedApp extends StatefulWidget {
     @required this.cupertinoApp,
     @required this.widgetsApp,
     @required this.child,
+    @required this.useDevicePreview,
+    @required this.devicePreviewData,
   }) : super(key: key);
 
   final Widget child;
@@ -22,13 +25,16 @@ class NestedApp extends StatefulWidget {
   final RouteSettings route;
   final Size size;
   final WidgetsApp widgetsApp;
+  final bool useDevicePreview;
+  final DevicePreviewData devicePreviewData;
 
   @override
-  _NestedAppState createState() => _NestedAppState();
+  NestedAppState createState() => NestedAppState();
 }
 
-class _NestedAppState extends State<NestedApp> {
+class NestedAppState extends State<NestedApp> {
   GlobalObjectKey<NavigatorState> _navKey;
+  UniqueKey _key = UniqueKey();
 
   @override
   void initState() {
@@ -37,8 +43,10 @@ class _NestedAppState extends State<NestedApp> {
   }
 
   void setup() {
+    _key = UniqueKey();
     _navKey = GlobalObjectKey<NavigatorState>(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
       if (widget?.route != null) {
         _navKey.currentState.pushReplacementNamed(
           widget.route.name,
@@ -161,15 +169,13 @@ class _NestedAppState extends State<NestedApp> {
     assert(widget.child != null || widget.route != null);
     if (widget.customWidget) {
       return MaterialApp(
+        key: _key,
         theme: widget.materialApp?.theme ?? ThemeData.light(),
         darkTheme: widget.materialApp?.darkTheme ?? ThemeData.dark(),
         themeMode: widget.materialApp?.themeMode ?? ThemeMode.system,
         debugShowCheckedModeBanner: false,
         home: widget.child,
-        builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: widget.size),
-          child: builder(context, val),
-        ),
+        builder: (context, val) => builder(context, _wrap(context, val)),
         color: widget.materialApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
@@ -185,6 +191,7 @@ class _NestedAppState extends State<NestedApp> {
 
     if (widget.materialApp != null) {
       return MaterialApp(
+        key: _key,
         navigatorKey: _navKey,
         theme: widget.materialApp?.theme ?? ThemeData.light(),
         darkTheme: widget.materialApp?.darkTheme ?? ThemeData.dark(),
@@ -195,11 +202,7 @@ class _NestedAppState extends State<NestedApp> {
         onUnknownRoute: widget.materialApp?.onUnknownRoute,
         onGenerateInitialRoutes: widget.materialApp?.onGenerateInitialRoutes,
         home: widget.child,
-        builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: widget.size),
-          child: builder(context, val),
-        ),
-        // initialRoute: route?.name,
+        builder: (context, val) => builder(context, _wrap(context, val)),
         color: widget.materialApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
@@ -214,6 +217,7 @@ class _NestedAppState extends State<NestedApp> {
     }
     if (widget.cupertinoApp != null) {
       return CupertinoApp(
+        key: _key,
         navigatorKey: _navKey,
         theme: widget.cupertinoApp?.theme ?? CupertinoThemeData(),
         debugShowCheckedModeBanner: false,
@@ -222,11 +226,7 @@ class _NestedAppState extends State<NestedApp> {
         onUnknownRoute: widget.cupertinoApp?.onUnknownRoute,
         onGenerateInitialRoutes: widget.cupertinoApp?.onGenerateInitialRoutes,
         home: widget.child,
-        builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: widget.size),
-          child: builder(context, val),
-        ),
-        // initialRoute: route?.name,
+        builder: (context, val) => builder(context, _wrap(context, val)),
         color: widget.cupertinoApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
@@ -241,6 +241,7 @@ class _NestedAppState extends State<NestedApp> {
     }
     if (widget.widgetsApp != null) {
       return WidgetsApp(
+        key: _key,
         navigatorKey: _navKey,
         debugShowCheckedModeBanner: false,
         routes: routes,
@@ -248,11 +249,7 @@ class _NestedAppState extends State<NestedApp> {
         onUnknownRoute: widget.widgetsApp?.onUnknownRoute,
         onGenerateInitialRoutes: widget.widgetsApp?.onGenerateInitialRoutes,
         home: widget.child,
-        builder: (context, val) => MediaQueryObserver(
-          data: MediaQuery.of(context).copyWith(size: widget.size),
-          child: builder(context, val),
-        ),
-        // initialRoute: route?.name,
+        builder: (context, val) => builder(context, _wrap(context, val)),
         color: widget.widgetsApp?.color,
         locale: locale,
         localizationsDelegates: localizationsDelegates,
@@ -266,5 +263,33 @@ class _NestedAppState extends State<NestedApp> {
       );
     }
     return widget.child;
+  }
+
+  Widget _wrap(BuildContext context, Widget child) {
+    // if (widget.useDevicePreview) {
+    //   final data = widget.devicePreviewData;
+    //   return DevicePreviewProvider(
+    //     mediaQuery: MediaQuery.of(context).copyWith(size: widget.size),
+    //     data: data,
+    //     availableDevices: Devices.all,
+    //     child: Builder(
+    //       builder: (context) {
+    //         final device = Devices.all[data.deviceIndex];
+    //         final isRotated = data.orientation == Orientation.landscape;
+    //         final screenSize = isRotated || device.portrait == null
+    //             ? device.landscape.size
+    //             : device.portrait.size;
+    //         return MediaQueryObserver(
+    //           data: MediaQuery.of(context).copyWith(size:  widget.size),
+    //           child: child,
+    //         );
+    //       },
+    //     ),
+    //   );
+    // }
+    return MediaQueryObserver(
+      data: MediaQuery.of(context).copyWith(size: widget.size),
+      child: child,
+    );
   }
 }

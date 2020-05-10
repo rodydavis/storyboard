@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
       enabled: true,
       usePreferences: true,
       crossAxisCount: 7,
+      useDevicePreview: true,
       screenSize: Size(400, 700),
       customScreens: [
         _generateScreen(

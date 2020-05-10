@@ -1,5 +1,6 @@
 library storyboard;
 
+import 'package:device_preview/device_preview.dart' as preview;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,7 @@ class StoryBoard extends StatefulWidget {
     this.customAppBar,
     this.crossAxisCount,
     this.title = _kTitle,
+    this.useDevicePreview = false,
     this.laneBuilder,
   })  : _materialApp = null,
         _widgetsApp = null,
@@ -60,6 +62,7 @@ class StoryBoard extends StatefulWidget {
     this.crossAxisCount,
     this.screenBuilder,
     this.title = _kTitle,
+    this.useDevicePreview = false,
     this.laneBuilder,
   })  : _materialApp = materialApp,
         _widgetsApp = widgetsApp,
@@ -86,6 +89,7 @@ class StoryBoard extends StatefulWidget {
     this.screenBuilder,
     this.crossAxisCount,
     this.title = _kTitle,
+    this.useDevicePreview = false,
     this.laneBuilder,
   })  : _materialApp = null,
         _widgetsApp = null,
@@ -111,6 +115,7 @@ class StoryBoard extends StatefulWidget {
     this.screenBuilder,
     this.crossAxisCount,
     this.title = _kTitle,
+    this.useDevicePreview = false,
     this.laneBuilder,
   })  : _materialApp = null,
         _widgetsApp = child,
@@ -136,6 +141,7 @@ class StoryBoard extends StatefulWidget {
     this.customRoutes,
     this.crossAxisCount,
     this.title = _kTitle,
+    this.useDevicePreview = false,
     this.laneBuilder,
   })  : _materialApp = child,
         _widgetsApp = null,
@@ -200,6 +206,8 @@ class StoryBoard extends StatefulWidget {
   // /// Max lane width instead of crossAxisCount
   // final double maxLaneWidth;
 
+  final bool useDevicePreview;
+
   final bool _widgets;
 
   @override
@@ -213,6 +221,7 @@ class StoryboardController extends State<StoryBoard> {
   SharedPreferences _prefs;
   int _row = 0;
   double _scale = 1;
+  preview.DevicePreviewData _devicePreviewData;
   String _scaleKey = 'flutter_storyboard_scale';
 
   @override
@@ -256,6 +265,11 @@ class StoryboardController extends State<StoryBoard> {
         }
       });
     }
+    _devicePreviewData = preview.DevicePreviewData(
+      isFrameVisible: true,
+      deviceIndex: 0,
+      orientation: Orientation.portrait,
+    );
     super.initState();
   }
 
@@ -345,6 +359,15 @@ class StoryboardController extends State<StoryBoard> {
     if (widget.screenBuilder != null) {
       return widget.screenSize;
     }
+    if (widget.useDevicePreview) {
+      final data = _devicePreviewData;
+      final device = preview.Devices.all[data.deviceIndex];
+      final isRotated = data.orientation == Orientation.landscape;
+      final screenSize = isRotated || device.portrait == null
+          ? device.landscape.size
+          : device.portrait.size;
+      return screenSize;
+    }
     if (widget.screenSize != null) {
       return Size(
         widget.screenSize.width,
@@ -360,7 +383,6 @@ class StoryboardController extends State<StoryBoard> {
     Widget child,
     bool customWidget = false,
   }) {
-    final _size = widget.screenSize;
     if (widget.screenBuilder != null) {
       return Material(
         child: widget.screenBuilder(
@@ -378,22 +400,35 @@ class StoryboardController extends State<StoryBoard> {
               ],
             ),
             child: SizedBox.fromSize(
-              size: _size,
-              child: ClipRect(
-                clipper: CustomRect(Offset(0, 0)),
-                child: NestedApp(
-                  route: route,
-                  child: child,
-                  size: _size,
-                  customWidget: customWidget,
-                  materialApp: materialApp,
-                  cupertinoApp: cupertinoApp,
-                  widgetsApp: widgetsApp,
-                ),
-              ),
+              size: size,
+              child: _nestedApp(route, child, size, customWidget),
             ),
           ),
         ),
+      );
+    }
+    if (widget.useDevicePreview) {
+      final data = _devicePreviewData;
+      final device = preview.Devices.all[data.deviceIndex];
+      final isRotated = data.orientation == Orientation.landscape;
+      final screenSize = isRotated || device.portrait == null
+          ? device.landscape.size
+          : device.portrait.size;
+      if (data.isFrameVisible) {
+        return preview.DevicePreview(
+          data: _devicePreviewData,
+          isToolBarVisible: false,
+          builder: (context) => _nestedApp(
+            route,
+            child,
+            screenSize,
+            customWidget,
+          ),
+        );
+      }
+      return SizedBox.fromSize(
+        size: screenSize,
+        child: _nestedApp(route, child, size, customWidget),
       );
     }
     return Column(
@@ -402,28 +437,35 @@ class StoryboardController extends State<StoryBoard> {
         Material(
           elevation: 4,
           child: SizedBox.fromSize(
-            size: _size,
-            child: ClipRect(
-              clipper: CustomRect(Offset(0, 0)),
-              child: NestedApp(
-                route: route,
-                child: child,
-                size: _size,
-                customWidget: customWidget,
-                materialApp: materialApp,
-                cupertinoApp: cupertinoApp,
-                widgetsApp: widgetsApp,
-              ),
-            ),
+            size: size,
+            child: _nestedApp(route, child, size, customWidget),
           ),
         ),
         if (label != null)
           Container(
             height: _kLabelHeight,
-            width: _size.width,
+            width: size.width,
             child: Center(child: RoundedLabel(label)),
           ),
       ],
+    );
+  }
+
+  ClipRect _nestedApp(
+      RouteSettings route, Widget child, Size _size, bool customWidget) {
+    return ClipRect(
+      clipper: CustomRect(Offset(0, 0)),
+      child: NestedApp(
+        route: route,
+        child: child,
+        devicePreviewData: _devicePreviewData,
+        useDevicePreview: widget.useDevicePreview,
+        size: _size,
+        customWidget: customWidget,
+        materialApp: materialApp,
+        cupertinoApp: cupertinoApp,
+        widgetsApp: widgetsApp,
+      ),
     );
   }
 
@@ -585,6 +627,13 @@ class StoryboardController extends State<StoryBoard> {
                         ),
                       ),
                     ],
+                    // if (widget.useDevicePreview)
+                    // Positioned(
+                    //   bottom: 0,
+                    //   right: 0,
+                    //   left: 0,
+                    //   child: DevicePreviewVerticalToolBar(),
+                    // )
                   ],
                 ),
               ),
