@@ -10,13 +10,44 @@ import 'src/nested_app.dart';
 import 'src/rounded_label.dart';
 
 const _kSpacing = 40.0;
+const _kLabelHeight = 55.0;
+const _kTitle = 'Storyboard';
+
+typedef LaneBuilder = Widget Function(
+    BuildContext context, String title, Widget child);
+typedef ScreenBuilder = Widget Function(
+    BuildContext context, RouteSettings route, Widget child);
 
 class StoryBoard extends StatefulWidget {
   const StoryBoard({
     Key key,
+    @required this.children,
+    this.enabled = true,
+    bool showAppBar = false,
+    Size childSize,
+    this.initialOffset,
+    this.initialScale,
+    this.usePreferences = false,
+    this.customAppBar,
+    this.crossAxisCount,
+    this.title = _kTitle,
+    this.laneBuilder,
+  })  : _materialApp = null,
+        _widgetsApp = null,
+        _cupertinoApp = null,
+        _widgets = true,
+        screenBuilder = null,
+        screenSize = childSize,
+        customRoutes = null,
+        hideAppBar = !showAppBar,
+        super(key: key);
+
+  const StoryBoard.app({
+    Key key,
     MaterialApp materialApp,
     WidgetsApp widgetsApp,
     CupertinoApp cupertinoApp,
+    List<Widget> customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
@@ -24,10 +55,16 @@ class StoryBoard extends StatefulWidget {
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
-    this.customScreens,
+    this.crossAxisCount,
+    this.screenBuilder,
+    this.title = _kTitle,
+    this.laneBuilder,
   })  : _materialApp = materialApp,
         _widgetsApp = widgetsApp,
         _cupertinoApp = cupertinoApp,
+        children = customScreens,
+        _widgets = false,
+        hideAppBar = false,
         assert(
             materialApp != null || widgetsApp != null || cupertinoApp != null),
         super(key: key);
@@ -35,6 +72,7 @@ class StoryBoard extends StatefulWidget {
   const StoryBoard.cupertino({
     Key key,
     Widget child,
+    List<Widget> customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
@@ -42,16 +80,23 @@ class StoryBoard extends StatefulWidget {
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
-    this.customScreens,
+    this.screenBuilder,
+    this.crossAxisCount,
+    this.title = _kTitle,
+    this.laneBuilder,
   })  : _materialApp = null,
         _widgetsApp = null,
         _cupertinoApp = child,
+        children = customScreens,
+        _widgets = false,
+        hideAppBar = false,
         assert(child != null),
         super(key: key);
 
   const StoryBoard.widgets({
     Key key,
     Widget child,
+    List<Widget> customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
@@ -59,38 +104,51 @@ class StoryBoard extends StatefulWidget {
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
-    this.customScreens,
+    this.screenBuilder,
+    this.crossAxisCount,
+    this.title = _kTitle,
+    this.laneBuilder,
   })  : _materialApp = null,
         _widgetsApp = child,
         _cupertinoApp = null,
+        children = customScreens,
+        _widgets = false,
+        hideAppBar = false,
         assert(child != null),
         super(key: key);
 
   const StoryBoard.material({
     Key key,
     Widget child,
+    List<Widget> customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
     this.initialOffset,
     this.initialScale,
+    this.screenBuilder,
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
-    this.customScreens,
+    this.crossAxisCount,
+    this.title = _kTitle,
+    this.laneBuilder,
   })  : _materialApp = child,
         _widgetsApp = null,
         _cupertinoApp = null,
+        children = customScreens,
+        _widgets = false,
+        hideAppBar = false,
         assert(child != null),
         super(key: key);
 
   /// Override the default app bar of the storyboard
-  final AppBar customAppBar;
+  final PreferredSizeWidget customAppBar;
 
   /// Custom routes you want to show with test data
   final List<RouteSettings> customRoutes;
 
   /// Custom screens you want to show
-  final List<Widget> customScreens;
+  final List<Widget> children;
 
   /// You can disable this widget at any time and just return the child
   final bool enabled;
@@ -104,6 +162,7 @@ class StoryBoard extends StatefulWidget {
   /// Size for each screen
   final Size screenSize;
 
+  /// Use shared preferences to store the values
   final bool usePreferences;
 
   /// Wrap your Cupertino App with this widget
@@ -114,6 +173,26 @@ class StoryBoard extends StatefulWidget {
 
   /// Wrap your Widgets App with this widget
   final WidgetsApp _widgetsApp;
+
+  /// Number of widgets to show in a row instead of maxLaneWidth
+  final int crossAxisCount;
+
+  /// Optionally hide the AppBar if used as a widget
+  final bool hideAppBar;
+
+  /// Title for AppBar
+  final String title;
+
+  /// Optionally wrap the screen building process to customize the label
+  final ScreenBuilder screenBuilder;
+
+  /// Optionally wrap the lane building process to customize the look
+  final LaneBuilder laneBuilder;
+
+  // /// Max lane width instead of crossAxisCount
+  // final double maxLaneWidth;
+
+  final bool _widgets;
 
   @override
   StoryboardController createState() => StoryboardController();
@@ -206,15 +285,6 @@ class StoryboardController extends State<StoryBoard> {
     return null;
   }
 
-  Offset _getOffset(Size _size, int row, [int i = 1]) {
-    final spacing = _kSpacing;
-    final h = _size.height;
-    final w = _size.width;
-    final _dx = ((w + spacing) * i);
-    final _dy = (h + spacing + spacing) * row;
-    return Offset(_dx, _dy);
-  }
-
   void _handleKeyPress(RawKeyEvent key) {
     // Scale keys
     if (key.isKeyPressed(LogicalKeyboardKey.minus)) {
@@ -263,49 +333,32 @@ class StoryboardController extends State<StoryBoard> {
     _prefs?.setDouble(_scaleKey, _scale);
   }
 
-  List<Widget> _addRow(int place, List<Widget> Function(int) children) {
-    return children(_row++);
-  }
-
-  Positioned _addPosChild({
-    Offset offset = Offset.zero,
-    Widget child,
-    double width,
-    double height,
-    AlignmentGeometry alignment,
-  }) {
-    final _top = _offset.dy + (_scale * offset.dy);
-    final _left = _offset.dx + (_scale * offset.dx);
-    return Positioned(
-      top: _top,
-      left: _left,
-      width: width,
-      height: height,
-      child: Transform.scale(
-        scale: _scale,
-        child: child,
-        alignment: alignment ?? Alignment.center,
-      ),
+  Size get size {
+    if (widget.screenBuilder != null) {
+      return widget.screenSize;
+    }
+    return Size(
+      widget.screenSize.width,
+      widget.screenSize.height + _kLabelHeight,
     );
   }
 
-  Positioned _addChild(
+  Widget _addChild(
     RouteSettings route, {
-    Offset offset = Offset.zero,
     String label,
     Widget child,
     bool customWidget = false,
   }) {
     final _size = widget.screenSize;
-    return _addPosChild(
-      offset: offset,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox.fromSize(
-            size: _size,
-            child: Material(
-              elevation: 4,
+    if (widget.screenBuilder != null) {
+      return Container(
+        child: widget.screenBuilder(
+          context,
+          route,
+          Material(
+            elevation: 4,
+            child: SizedBox.fromSize(
+              size: _size,
               child: ClipRect(
                 clipper: CustomRect(Offset(0, 0)),
                 child: NestedApp(
@@ -320,16 +373,42 @@ class StoryboardController extends State<StoryBoard> {
               ),
             ),
           ),
-          if (label != null) Center(child: RoundedLabel(label)),
-        ],
-      ),
+        ),
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          elevation: 4,
+          child: SizedBox.fromSize(
+            size: _size,
+            child: ClipRect(
+              clipper: CustomRect(Offset(0, 0)),
+              child: NestedApp(
+                route: route,
+                child: child,
+                size: _size,
+                customWidget: customWidget,
+                materialApp: materialApp,
+                cupertinoApp: cupertinoApp,
+                widgetsApp: widgetsApp,
+              ),
+            ),
+          ),
+        ),
+        if (label != null)
+          Container(
+            height: _kLabelHeight,
+            width: _size.width,
+            child: Center(child: RoundedLabel(label)),
+          ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final _size = widget.screenSize;
-    _row = 0;
     if (!widget.enabled) return app;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -337,15 +416,139 @@ class StoryboardController extends State<StoryBoard> {
       theme: materialApp?.theme ?? ThemeData.light(),
       darkTheme: materialApp?.darkTheme ?? ThemeData.dark(),
       home: Scaffold(
-        appBar: widget?.customAppBar ??
+        appBar: _buildAppBar(),
+        body: RawKeyboardListener(
+          focusNode: _focusNode,
+          onKey: _handleKeyPress,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              updateOffset(details.delta);
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              child: OverflowBox(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (widget._widgets)
+                      Positioned(
+                        top: _offset.dy + (_scale * 10),
+                        left: _offset.dx + (_scale * 10),
+                        child: Transform.scale(
+                          scale: _scale,
+                          alignment: Alignment.topLeft,
+                          child: _Lane(
+                            laneBuilder: widget.laneBuilder,
+                            title: 'Children',
+                            scale: _scale,
+                            size: widget.screenSize,
+                            children: widget.children,
+                            crossAxisCount: widget.crossAxisCount,
+                          ),
+                        ),
+                      ),
+                    if (!widget._widgets) ...[
+                      Positioned(
+                        top: _offset.dy + (_scale * 10),
+                        left: _offset.dx + (_scale * 10),
+                        child: Transform.scale(
+                          scale: _scale,
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Lane(
+                                scale: _scale,
+                                title: 'Main',
+                                laneBuilder: widget.laneBuilder,
+                                size: size,
+                                crossAxisCount: widget.crossAxisCount,
+                                children: [
+                                  if (initialRoute != null)
+                                    _addChild(
+                                      RouteSettings(name: initialRoute),
+                                      label: 'Initial Route',
+                                    ),
+                                  if (home != null)
+                                    _addChild(
+                                      null,
+                                      label: 'Home',
+                                      child: home,
+                                    ),
+                                ],
+                              ),
+                              if (routes != const <String, WidgetBuilder>{})
+                                _Lane(
+                                  title: 'Routes',
+                                  scale: _scale,
+                                  laneBuilder: widget.laneBuilder,
+                                  size: size,
+                                  crossAxisCount: widget.crossAxisCount,
+                                  children: [
+                                    for (var i = 0; i < routes.keys.length; i++)
+                                      _addChild(
+                                        RouteSettings(
+                                            name: routes.keys.toList()[i]),
+                                        label: routes.keys.toList()[i],
+                                      ),
+                                  ],
+                                ),
+                              if (widget.children != null)
+                                _Lane(
+                                  laneBuilder: widget.laneBuilder,
+                                  title: 'Custom Screens',
+                                  scale: _scale,
+                                  size: size,
+                                  children: widget.children,
+                                  crossAxisCount: widget.crossAxisCount,
+                                ),
+                              if (widget.customRoutes != null)
+                                _Lane(
+                                  laneBuilder: widget.laneBuilder,
+                                  title: 'Custom Routes',
+                                  scale: _scale,
+                                  size: size,
+                                  crossAxisCount: widget.crossAxisCount,
+                                  children: [
+                                    for (var i = 0;
+                                        i < widget.customRoutes.length;
+                                        i++)
+                                      _addChild(
+                                        widget.customRoutes[i],
+                                        label: widget.customRoutes[i].name,
+                                      ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return widget.hideAppBar
+        ? null
+        : widget?.customAppBar ??
             AppBar(
-              title: Text('Storyboard'),
+              title: Text(_kTitle),
               actions: [
                 IconButton(
                   icon: Icon(Icons.restore),
                   onPressed: () {
-                    updateScale(0.75, true);
-                    updateOffset(Offset(10, -_kSpacing), true);
+                    updateScale(widget?.initialScale ?? 0.75, true);
+                    updateOffset(
+                        widget?.initialOffset ?? Offset(10, -_kSpacing), true);
                   },
                 ),
                 VerticalDivider(),
@@ -362,86 +565,134 @@ class StoryboardController extends State<StoryBoard> {
                   onPressed: () => updateScale(0.01),
                 ),
               ],
-            ),
-        body: RawKeyboardListener(
-          focusNode: _focusNode,
-          onKey: _handleKeyPress,
-          child: GestureDetector(
-            onPanUpdate: (panDetials) {
-              updateOffset(panDetials.delta);
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              child: OverflowBox(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ..._addRow(
-                        0,
-                        (row) => [
-                              if (home != null)
-                                _addChild(
-                                  null,
-                                  offset: _getOffset(_size, row, 0),
-                                  label: 'Home',
-                                  child: home,
-                                ),
-                              if (initialRoute != null)
-                                _addChild(
-                                  RouteSettings(name: initialRoute),
-                                  offset: _getOffset(
-                                      _size, row, home != null ? 1 : 0),
-                                  label: 'Initial Route',
-                                ),
-                            ]),
-                    if (routes != const <String, WidgetBuilder>{})
-                      ..._addRow(
-                          1,
-                          (row) => [
-                                for (var i = 0; i < routes.keys.length; i++)
-                                  _addChild(
-                                    RouteSettings(
-                                        name: routes.keys.toList()[i]),
-                                    offset: _getOffset(_size, row, i),
-                                    label: routes.keys.toList()[i],
-                                  ),
-                              ]),
-                    if (widget.customScreens != null)
-                      ..._addRow(
-                          2,
-                          (row) => [
-                                for (var i = 0;
-                                    i < widget.customScreens.length;
-                                    i++)
-                                  _addChild(
-                                    null,
-                                    offset: _getOffset(_size, row, i),
-                                    label: widget.customScreens[i].toString(),
-                                    child: widget.customScreens[i],
-                                    customWidget: true,
-                                  ),
-                              ]),
-                    if (widget.customRoutes != null)
-                      ..._addRow(
-                          3,
-                          (row) => [
-                                for (var i = 0;
-                                    i < widget.customRoutes.length;
-                                    i++)
-                                  _addChild(
-                                    widget.customRoutes[i],
-                                    offset: _getOffset(_size, row, i),
-                                    label: widget.customRoutes[i].name,
-                                  ),
-                              ]),
-                  ],
-                ),
-              ),
-            ),
-          ),
+            );
+  }
+}
+
+class _Lane extends StatelessWidget {
+  const _Lane({
+    Key key,
+    @required this.children,
+    @required this.crossAxisCount,
+    this.itemBuilder,
+    this.laneBuilder,
+    @required this.scale,
+    this.title,
+    this.size,
+  }) : super(key: key);
+
+  final List<Widget> children;
+  final int crossAxisCount;
+  final Size size;
+  final double scale;
+  final LaneBuilder laneBuilder;
+  final String title;
+  final Widget Function(BuildContext, Widget) itemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Widget> _children = [];
+    for (final child in children) {
+      if (itemBuilder != null) {
+        _children.add(itemBuilder(context, child));
+      } else {
+        _children.add(child);
+      }
+    }
+    int _itemsPerRow;
+    int _rows;
+    if (crossAxisCount != null) {
+      _rows = (_children.length / crossAxisCount).ceil();
+      _itemsPerRow = crossAxisCount;
+    } else {
+      _rows = 1;
+      _itemsPerRow = _children.length;
+    }
+    Widget _child;
+    if (size == null) {
+      // if (maxWidth != null) {
+      //   _child = Container(
+      //     width: maxWidth,
+      //     child: Wrap(
+      //       alignment: WrapAlignment.start,
+      //       crossAxisAlignment: WrapCrossAlignment.start,
+      //       spacing: _kSpacing,
+      //       runSpacing: _kSpacing,
+      //       children: _children,
+      //     ),
+      //   );
+      // } else {
+      //   _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
+      // }
+      _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
+    } else {
+      final _gridSize = Size(
+        (_kSpacing + size.width) * _itemsPerRow,
+        (_kSpacing + size.height) * _rows,
+      );
+      _child = buildGridLane(_gridSize, _children, context);
+    }
+    if (laneBuilder != null) {
+      return laneBuilder(context, title, _child);
+    }
+    return _child;
+  }
+
+  Widget buildGridLane(
+      Size gridSize, List<Widget> _children, BuildContext context) {
+    return SizedBox.fromSize(
+      size: gridSize,
+      child: GridView(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount ?? children.length,
+          crossAxisSpacing: _kSpacing,
+          mainAxisSpacing: _kSpacing,
+          childAspectRatio: size.width / size.height,
         ),
+        children: _children.map((e) {
+          Widget _child = SizedBox.fromSize(size: size, child: e);
+          if (itemBuilder != null) {
+            _child = itemBuilder(context, _child);
+          }
+          return Center(child: _child);
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget buildWrapLane(int _rows, List<Widget> _children, int _itemsPerRow,
+      BuildContext context) {
+    return Container(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < _rows; i++)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: _children
+                  .skip(i * _itemsPerRow)
+                  .take(_itemsPerRow)
+                  .toList()
+                  .map((e) {
+                Widget _child = e;
+                if (itemBuilder != null) {
+                  _child = itemBuilder(context, _child);
+                }
+                return Container(
+                  padding: const EdgeInsets.all(_kSpacing / 2),
+                  width: size?.width,
+                  height: size?.height,
+                  child: Center(child: _child),
+                );
+              }).toList(),
+            ),
+        ],
       ),
     );
   }

@@ -22,6 +22,33 @@ class MyApp extends StatelessWidget {
             color: RandomColor(i + 25).randomColor(),
           ),
       ],
+      laneBuilder: (context, title, child) {
+        return Container(
+          padding: const EdgeInsets.all(8.0),
+          margin: const EdgeInsets.all(4.0),
+          color: RandomColor(title.hashCode).randomColor(),
+          child: Stack(
+            overflow: Overflow.visible,
+            children: [
+              child,
+              Positioned(
+                left: -50,
+                top: 350,
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 30,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
       customRoutes: [
         RouteSettings(name: '/about'),
         RouteSettings(name: '/counter'),
