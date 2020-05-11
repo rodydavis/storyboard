@@ -6,32 +6,37 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/custom_rect_clipper.dart';
+import 'src/media_query_observer.dart';
 import 'src/nested_app.dart';
 import 'src/rounded_label.dart';
 
+part 'src/render_lane.dart';
+
 const _kSpacing = 40.0;
 const _kLabelHeight = 65.0;
+const _kCompactBreakpoint = 400.0;
 const _kTitle = 'Storyboard';
 
-typedef LaneBuilder = Widget Function(
-    BuildContext context, String title, Widget child);
 typedef ScreenBuilder = Widget Function(
     BuildContext context, RouteSettings route, Widget child);
 
 class StoryBoard extends StatefulWidget {
   const StoryBoard({
     Key key,
-    @required this.children,
+    this.children,
+    this.customLanes,
+    this.sizedChildren,
     bool showAppBar = false,
     Size childSize,
     this.initialOffset,
-    this.customLanes,
     this.initialScale,
     this.usePreferences = false,
     this.customAppBar,
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
+    this.childrenLabel = 'Children',
+    this.sizedChildrenLabel = 'Sized Children',
   })  : _materialApp = null,
         _widgetsApp = null,
         _cupertinoApp = null,
@@ -41,6 +46,8 @@ class StoryBoard extends StatefulWidget {
         customRoutes = null,
         hideAppBar = !showAppBar,
         enabled = true,
+        assert(
+            children != null || customLanes != null || sizedChildren != null),
         super(key: key);
 
   const StoryBoard.app({
@@ -61,6 +68,9 @@ class StoryBoard extends StatefulWidget {
     this.screenBuilder,
     this.title = _kTitle,
     this.laneBuilder,
+    this.childrenLabel = 'Children',
+    this.sizedChildrenLabel = 'Sized Children',
+    this.sizedChildren,
   })  : _materialApp = materialApp,
         _widgetsApp = widgetsApp,
         _cupertinoApp = cupertinoApp,
@@ -87,6 +97,9 @@ class StoryBoard extends StatefulWidget {
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
+    this.sizedChildren,
+    this.childrenLabel = 'Children',
+    this.sizedChildrenLabel = 'Sized Children',
   })  : _materialApp = null,
         _widgetsApp = null,
         _cupertinoApp = child,
@@ -112,6 +125,9 @@ class StoryBoard extends StatefulWidget {
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
+    this.sizedChildren,
+    this.childrenLabel = 'Children',
+    this.sizedChildrenLabel = 'Sized Children',
   })  : _materialApp = null,
         _widgetsApp = child,
         _cupertinoApp = null,
@@ -137,6 +153,9 @@ class StoryBoard extends StatefulWidget {
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
+    this.sizedChildren,
+    this.childrenLabel = 'Children',
+    this.sizedChildrenLabel = 'Sized Children',
   })  : _materialApp = child,
         _widgetsApp = null,
         _cupertinoApp = null,
@@ -154,6 +173,9 @@ class StoryBoard extends StatefulWidget {
 
   /// Custom screens you want to show
   final List<Widget> children;
+
+  /// Children that can have custom sizes
+  final List<CustomScreen> sizedChildren;
 
   /// List of custom lanes
   final List<CustomLane> customLanes;
@@ -197,6 +219,9 @@ class StoryBoard extends StatefulWidget {
   /// Optionally wrap the lane building process to customize the look
   final LaneBuilder laneBuilder;
 
+  /// Label for Custom Screens or Children
+  final String childrenLabel, sizedChildrenLabel;
+
   // /// Max lane width instead of crossAxisCount
   // final double maxLaneWidth;
 
@@ -214,6 +239,7 @@ class StoryboardController extends State<StoryBoard> {
   int _row = 0;
   double _scale = 1;
   String _scaleKey = 'flutter_storyboard_scale';
+  UniqueKey _key = UniqueKey();
 
   @override
   void didUpdateWidget(StoryBoard oldWidget) {
@@ -241,6 +267,7 @@ class StoryboardController extends State<StoryBoard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       updateScale(widget?.initialScale ?? 0.75, true);
       updateOffset(widget?.initialOffset ?? Offset(10, -_kSpacing), true);
+      if (mounted) setState(() {});
     });
     if (widget.usePreferences) {
       SharedPreferences.getInstance().then((value) {
@@ -257,6 +284,11 @@ class StoryboardController extends State<StoryBoard> {
       });
     }
     super.initState();
+  }
+
+  void restart() {
+    _key = UniqueKey();
+    if (mounted) setState(() {});
   }
 
   Widget get app {
@@ -354,224 +386,225 @@ class StoryboardController extends State<StoryBoard> {
     return null;
   }
 
-  Widget _addChild(
+  CustomScreen _addChild(
     RouteSettings route, {
     String label,
     Widget child,
     bool customWidget = false,
+    Size customSize,
   }) {
-    final _size = widget.screenSize;
+    final _size = customSize ?? widget.screenSize;
     if (widget.screenBuilder != null) {
-      return Material(
-        child: widget.screenBuilder(
-          context,
-          route,
-          Container(
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF000000),
-                  offset: Offset(20.0, 10.0),
-                  blurRadius: 20.0,
-                  spreadRadius: 40.0,
-                )
-              ],
-            ),
-            child: SizedBox.fromSize(
-              size: _size,
-              child: ClipRect(
-                clipper: CustomRect(Offset(0, 0)),
-                child: NestedApp(
-                  route: route,
-                  child: child,
-                  size: _size,
-                  customWidget: customWidget,
-                  materialApp: materialApp,
-                  cupertinoApp: cupertinoApp,
-                  widgetsApp: widgetsApp,
-                ),
-              ),
-            ),
+      return CustomScreen(
+        size: size,
+        child: Material(
+          child: widget.screenBuilder(
+            context,
+            route,
+            _buildApp(_size, route, child, customWidget),
           ),
         ),
       );
     }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Material(
-          elevation: 4,
-          child: SizedBox.fromSize(
-            size: _size,
-            child: ClipRect(
-              clipper: CustomRect(Offset(0, 0)),
-              child: NestedApp(
-                route: route,
-                child: child,
-                size: _size,
-                customWidget: customWidget,
-                materialApp: materialApp,
-                cupertinoApp: cupertinoApp,
-                widgetsApp: widgetsApp,
-              ),
+    return CustomScreen(
+      size: size,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildApp(_size, route, child, customWidget),
+          if (label != null)
+            Container(
+              height: _kLabelHeight,
+              width: _size.width,
+              child: Center(child: RoundedLabel(label)),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApp(
+    Size _size,
+    RouteSettings route,
+    Widget child,
+    bool customWidget,
+  ) {
+    return Material(
+      elevation: 2,
+      child: SizedBox.fromSize(
+        size: _size,
+        child: ClipRect(
+          clipper: CustomRect(Offset(0, 0)),
+          child: NestedApp(
+            route: route,
+            child: child,
+            size: _size,
+            customWidget: customWidget,
+            materialApp: materialApp,
+            cupertinoApp: cupertinoApp,
+            widgetsApp: widgetsApp,
           ),
         ),
-        if (label != null)
-          Container(
-            height: _kLabelHeight,
-            width: _size.width,
-            child: Center(child: RoundedLabel(label)),
-          ),
-      ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled) return app;
+    final _theme = Theme.of(context);
     return MaterialApp(
+      key: _key,
       debugShowCheckedModeBanner: false,
       themeMode: materialApp?.themeMode ?? ThemeMode.system,
-      theme: materialApp?.theme ?? ThemeData.light(),
-      darkTheme: materialApp?.darkTheme ?? ThemeData.dark(),
-      home: Scaffold(
-        appBar: _buildAppBar(),
-        body: RawKeyboardListener(
-          focusNode: _focusNode,
-          onKey: _handleKeyPress,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              updateOffset(details.delta);
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              child: OverflowBox(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (widget._widgets)
-                      Positioned(
-                        top: _offset.dy + (_scale * 10),
-                        left: _offset.dx + (_scale * 10),
-                        child: Transform.scale(
-                          scale: _scale,
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _Lane(
-                                laneBuilder: widget.laneBuilder,
-                                title: 'Children',
-                                scale: _scale,
-                                size: size,
-                                children: widget.children,
-                                crossAxisCount: widget.crossAxisCount,
-                              ),
-                              if (widget.customLanes != null)
-                                for (final lane in widget.customLanes)
-                                  _Lane(
-                                    laneBuilder: widget.laneBuilder,
-                                    title: lane.title,
-                                    scale: _scale,
-                                    size: size,
-                                    crossAxisCount: widget.crossAxisCount,
-                                    children: lane.children,
-                                  ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    if (!widget._widgets) ...[
-                      Positioned(
-                        top: _offset.dy + (_scale * 10),
-                        left: _offset.dx + (_scale * 10),
-                        child: Transform.scale(
-                          scale: _scale,
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _Lane(
-                                scale: _scale,
-                                title: 'Main',
-                                laneBuilder: widget.laneBuilder,
-                                size: size,
-                                crossAxisCount: widget.crossAxisCount,
+      theme: materialApp?.theme ?? _theme ?? ThemeData.light(),
+      darkTheme: materialApp?.darkTheme ?? _theme ?? ThemeData.dark(),
+      // builder: (context, child) => MediaQueryObserver(
+      //   data: MediaQuery.of(context).copyWith(size: size),
+      //   child: child,
+      // ),
+      home: LayoutBuilder(
+        builder: (context, dimens) => Scaffold(
+          appBar: _buildAppBar(dimens.maxWidth <= _kCompactBreakpoint),
+          body: RawKeyboardListener(
+            focusNode: _focusNode,
+            onKey: _handleKeyPress,
+            child: GestureDetector(
+              onPanUpdate: (details) {
+                updateOffset(details.delta);
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                child: OverflowBox(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (widget._widgets)
+                        Positioned(
+                          top: _offset.dy + (_scale * 10),
+                          left: _offset.dx + (_scale * 10),
+                          child: Transform.scale(
+                            scale: _scale,
+                            alignment: Alignment.topLeft,
+                            child: Container(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (initialRoute != null)
-                                    _addChild(
-                                      RouteSettings(name: initialRoute),
-                                      label: 'Initial Route',
+                                  if (widget?.children != null)
+                                    _Lane(
+                                      laneBuilder: widget.laneBuilder,
+                                      title: widget?.childrenLabel ?? '',
+                                      scale: _scale,
+                                      size: size,
+                                      children: widget.children
+                                          .map(
+                                            (e) => CustomScreen(
+                                              size: size,
+                                              child: e,
+                                            ),
+                                          )
+                                          .toList(),
+                                      crossAxisCount: widget.crossAxisCount,
+                                      shadow: const BoxShadow(
+                                        color: Colors.black45,
+                                        offset: Offset(2.0, 2.0),
+                                        blurRadius: 10.0,
+                                        spreadRadius: 2.0,
+                                      ),
                                     ),
-                                  if (home != null)
-                                    _addChild(
-                                      null,
-                                      label: 'Home',
-                                      child: home,
+                                  if (widget?.sizedChildren != null)
+                                    _Lane(
+                                      laneBuilder: widget.laneBuilder,
+                                      title: widget?.sizedChildrenLabel ?? '',
+                                      scale: _scale,
+                                      size: size,
+                                      children: widget.sizedChildren,
+                                      crossAxisCount: widget.crossAxisCount,
+                                      shadow: const BoxShadow(
+                                        color: Colors.black45,
+                                        offset: Offset(2.0, 2.0),
+                                        blurRadius: 10.0,
+                                        spreadRadius: 2.0,
+                                      ),
                                     ),
+                                  if (widget.customLanes != null)
+                                    for (final lane in widget.customLanes)
+                                      _Lane(
+                                        laneBuilder: widget.laneBuilder,
+                                        title: lane.title,
+                                        scale: _scale,
+                                        size: size,
+                                        crossAxisCount: widget.crossAxisCount,
+                                        children: lane.children,
+                                        shadow: const BoxShadow(
+                                          color: Colors.black45,
+                                          offset: Offset(2.0, 2.0),
+                                          blurRadius: 10.0,
+                                          spreadRadius: 2.0,
+                                        ),
+                                      ),
                                 ],
                               ),
-                              if (routes != const <String, WidgetBuilder>{})
+                            ),
+                          ),
+                        ),
+                      if (!widget._widgets) ...[
+                        Positioned(
+                          top: _offset.dy + (_scale * 10),
+                          left: _offset.dx + (_scale * 10),
+                          child: Transform.scale(
+                            scale: _scale,
+                            alignment: Alignment.topLeft,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
                                 _Lane(
-                                  title: 'Routes',
                                   scale: _scale,
+                                  title: 'Main',
                                   laneBuilder: widget.laneBuilder,
                                   size: size,
                                   crossAxisCount: widget.crossAxisCount,
                                   children: [
-                                    for (var i = 0; i < routes.keys.length; i++)
+                                    if (initialRoute != null)
                                       _addChild(
-                                        RouteSettings(
-                                            name: routes.keys.toList()[i]),
-                                        label: routes.keys.toList()[i],
+                                        RouteSettings(name: initialRoute),
+                                        label: 'Initial Route',
+                                      ),
+                                    if (home != null)
+                                      _addChild(
+                                        null,
+                                        label: 'Home',
+                                        child: home,
                                       ),
                                   ],
                                 ),
-                              if (widget.children != null)
-                                _Lane(
-                                  laneBuilder: widget.laneBuilder,
-                                  title: 'Custom Screens',
-                                  scale: _scale,
-                                  size: size,
-                                  children: widget.children
-                                      .map((e) => _addChild(
-                                            null,
-                                            label: null,
-                                            child: e,
-                                            customWidget: true,
-                                          ))
-                                      .toList(),
-                                  crossAxisCount: widget.crossAxisCount,
-                                ),
-                              if (widget.customRoutes != null)
-                                _Lane(
-                                  laneBuilder: widget.laneBuilder,
-                                  title: 'Custom Routes',
-                                  scale: _scale,
-                                  size: size,
-                                  crossAxisCount: widget.crossAxisCount,
-                                  children: [
-                                    for (var i = 0;
-                                        i < widget.customRoutes.length;
-                                        i++)
-                                      _addChild(
-                                        widget.customRoutes[i],
-                                        label: widget.customRoutes[i].name,
-                                      ),
-                                  ],
-                                ),
-                              if (widget.customLanes != null)
-                                for (final lane in widget.customLanes)
+                                if (routes != const <String, WidgetBuilder>{})
                                   _Lane(
-                                    laneBuilder: widget.laneBuilder,
-                                    title: lane.title,
+                                    title: 'Routes',
                                     scale: _scale,
+                                    laneBuilder: widget.laneBuilder,
                                     size: size,
                                     crossAxisCount: widget.crossAxisCount,
-                                    children: lane.children
+                                    children: [
+                                      for (var i = 0;
+                                          i < routes.keys.length;
+                                          i++)
+                                        _addChild(
+                                          RouteSettings(
+                                              name: routes.keys.toList()[i]),
+                                          label: routes.keys.toList()[i],
+                                        ),
+                                    ],
+                                  ),
+                                if (widget.children != null)
+                                  _Lane(
+                                    laneBuilder: widget.laneBuilder,
+                                    title: widget?.childrenLabel ?? '',
+                                    scale: _scale,
+                                    size: size,
+                                    children: widget.children
                                         .map((e) => _addChild(
                                               null,
                                               label: null,
@@ -579,13 +612,50 @@ class StoryboardController extends State<StoryBoard> {
                                               customWidget: true,
                                             ))
                                         .toList(),
+                                    crossAxisCount: widget.crossAxisCount,
                                   ),
-                            ],
+                                if (widget.customRoutes != null)
+                                  _Lane(
+                                    laneBuilder: widget.laneBuilder,
+                                    title: 'Custom Routes',
+                                    scale: _scale,
+                                    size: size,
+                                    crossAxisCount: widget.crossAxisCount,
+                                    children: [
+                                      for (var i = 0;
+                                          i < widget.customRoutes.length;
+                                          i++)
+                                        _addChild(
+                                          widget.customRoutes[i],
+                                          label: widget.customRoutes[i].name,
+                                        ),
+                                    ],
+                                  ),
+                                if (widget.customLanes != null)
+                                  for (final lane in widget.customLanes)
+                                    _Lane(
+                                      laneBuilder: widget.laneBuilder,
+                                      title: lane.title,
+                                      scale: _scale,
+                                      size: size,
+                                      crossAxisCount: widget.crossAxisCount,
+                                      children: lane.children
+                                          .map((e) => _addChild(
+                                                null,
+                                                label: e.label,
+                                                child: e.child,
+                                                customSize: e.size,
+                                                customWidget: true,
+                                              ))
+                                          .toList(),
+                                    ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -595,164 +665,86 @@ class StoryboardController extends State<StoryBoard> {
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar([bool compact = false]) {
+    const kRestartKey = 0;
+    const kResetKey = 1;
+    const kZoomInKey = 2;
+    const kZoomOutKey = 4;
     return widget.hideAppBar
         ? null
         : widget?.customAppBar ??
             AppBar(
               title: Text(_kTitle),
-              actions: [
-                IconButton(
-                  icon: Icon(Icons.restore),
-                  onPressed: () {
-                    updateScale(widget?.initialScale ?? 0.75, true);
-                    updateOffset(
-                        widget?.initialOffset ?? Offset(10, -_kSpacing), true);
-                  },
-                ),
-                VerticalDivider(),
-                IconButton(
-                  icon: Icon(Icons.remove),
-                  onPressed: () => updateScale(-0.01),
-                ),
-                InkWell(
-                  child: Center(child: Text('${(_scale * 100).round()}%')),
-                  onTap: () => updateScale(0.75, true),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: () => updateScale(0.01),
-                ),
-              ],
+              actions: compact
+                  ? [
+                      PopupMenuButton<int>(
+                        icon: Icon(Icons.more_vert),
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: kRestartKey,
+                            child: Text('Restart App'),
+                          ),
+                          PopupMenuItem(
+                            value: kResetKey,
+                            child: Text('Reset Defaults'),
+                          ),
+                          PopupMenuItem(
+                            value: kZoomInKey,
+                            child: Text('Zoom In'),
+                          ),
+                          PopupMenuItem(
+                            value: kZoomOutKey,
+                            child: Text('Zoom Out'),
+                          ),
+                        ],
+                        onSelected: (val) {
+                          if (val == kRestartKey) {
+                            restart();
+                          }
+                          if (val == kResetKey) {
+                            restore();
+                          }
+                          if (val == kZoomInKey) {
+                            updateScale(0.01);
+                          }
+                          if (val == kZoomOutKey) {
+                            updateScale(-0.01);
+                          }
+                        },
+                      ),
+                    ]
+                  : [
+                      IconButton(
+                        tooltip: 'Restart App',
+                        icon: Icon(Icons.refresh),
+                        onPressed: restart,
+                      ),
+                      IconButton(
+                        tooltip: 'Reset to Defaults',
+                        icon: Icon(Icons.restore),
+                        onPressed: restore,
+                      ),
+                      VerticalDivider(),
+                      IconButton(
+                        icon: Icon(Icons.remove),
+                        onPressed: () => updateScale(-0.01),
+                      ),
+                      InkWell(
+                        child:
+                            Center(child: Text('${(_scale * 100).round()}%')),
+                        onTap: () =>
+                            updateScale(widget?.initialScale ?? 0.75, true),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: () => updateScale(0.01),
+                      ),
+                    ],
             );
   }
-}
 
-class CustomLane {
-  final String title;
-  final List<Widget> children;
-
-  CustomLane({
-    @required this.title,
-    @required this.children,
-  });
-}
-
-class _Lane extends StatelessWidget {
-  const _Lane({
-    Key key,
-    @required this.children,
-    @required this.crossAxisCount,
-    this.itemBuilder,
-    this.laneBuilder,
-    @required this.scale,
-    this.title,
-    this.size,
-  }) : super(key: key);
-
-  final List<Widget> children;
-  final int crossAxisCount;
-  final Size size;
-  final double scale;
-  final LaneBuilder laneBuilder;
-  final String title;
-  final Widget Function(BuildContext, Widget) itemBuilder;
-
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> _children = [];
-    for (final child in children) {
-      if (itemBuilder != null) {
-        _children.add(itemBuilder(context, child));
-      } else {
-        _children.add(child);
-      }
-    }
-    int _itemsPerRow;
-    int _rows;
-    if (crossAxisCount != null) {
-      _rows = (_children.length / crossAxisCount).ceil();
-      _itemsPerRow = crossAxisCount;
-    } else {
-      _rows = 1;
-      _itemsPerRow = _children.length;
-    }
-    Widget _child;
-    if (size == null) {
-      _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
-    } else {
-      final _gridSize = Size(
-        (_kSpacing + size.width) * _itemsPerRow,
-        (_kSpacing + size.height) * _rows,
-      );
-      _child = buildGridLane(_gridSize, _children, context);
-    }
-    if (laneBuilder != null) {
-      return laneBuilder(context, title, _child);
-    }
-    return _child;
-  }
-
-  Widget buildGridLane(
-      Size gridSize, List<Widget> _children, BuildContext context) {
-    return Container(
-      margin: EdgeInsets.all(_kSpacing / 2),
-      child: SizedBox.fromSize(
-        size: gridSize,
-        child: GridView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount ?? children.length,
-            crossAxisSpacing: _kSpacing,
-            mainAxisSpacing: _kSpacing,
-            childAspectRatio: size.width / size.height,
-          ),
-          children: _children.map((e) {
-            Widget _child = SizedBox.fromSize(size: size, child: e);
-            if (itemBuilder != null) {
-              _child = itemBuilder(context, _child);
-            }
-            return Center(child: _child);
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget buildWrapLane(int _rows, List<Widget> _children, int _itemsPerRow,
-      BuildContext context) {
-    return Container(
-      margin: EdgeInsets.all(_kSpacing / 2),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (var i = 0; i < _rows; i++)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: _children
-                  .skip(i * _itemsPerRow)
-                  .take(_itemsPerRow)
-                  .toList()
-                  .map((e) {
-                Widget _child = e;
-                if (itemBuilder != null) {
-                  _child = itemBuilder(context, _child);
-                }
-                return Container(
-                  padding: const EdgeInsets.all(_kSpacing / 2),
-                  width: size?.width,
-                  height: size?.height,
-                  child: Center(child: _child),
-                );
-              }).toList(),
-            ),
-        ],
-      ),
-    );
+  void restore() {
+    updateScale(widget?.initialScale ?? 0.75, true);
+    updateOffset(widget?.initialOffset ?? Offset(10, -_kSpacing), true);
   }
 }

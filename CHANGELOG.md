@@ -1,3 +1,12 @@
+## 0.1.3
+
+* Fixes #15 Scale Reset
+* Adding Label for Children and SizedChildren
+* Adding sizedChildren based on CustomScreen
+* Fixing Storyboard Empty Children #14
+* Fixing #12 with picking up theme
+* Adding Examples
+
 ## 0.1.2
 
 * Adding Shadows for Dark Mode

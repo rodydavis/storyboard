@@ -16,10 +16,6 @@ class MyApp extends StatelessWidget {
       crossAxisCount: 7,
       screenSize: Size(400, 700),
       customScreens: [
-        _generateScreen(
-          title: Text('ScreenDark'),
-          color: ThemeData.dark().scaffoldBackgroundColor,
-        ),
         for (var i = 0; i < 25; i++)
           _generateScreen(
             title: Text('Screen$i'),
@@ -45,13 +41,12 @@ class MyApp extends StatelessWidget {
         darkTheme: ThemeData.dark().copyWith(
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        themeMode: ThemeMode.dark,
+        themeMode: ThemeMode.light,
         // home: HomeScreen(),
         initialRoute: '/settings',
         routes: {
           '/': (_) => HomeScreen(),
           '/counter': (_) => CounterScreen(),
-          '/about': (_) => AboutScreen(),
           '/settings': (_) => SettingsScreen(),
           for (var i = 0; i < 25; i++)
             '/screen_$i': (_) => _generateScreen(
@@ -168,20 +163,6 @@ class AboutScreen extends StatelessWidget {
         title: Text('About'),
       ),
       backgroundColor: Colors.purple.shade300,
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.info_outline),
-        onPressed: () {
-          showDialog(
-              context: context,
-              useRootNavigator: false,
-              builder: (context) {
-                return AlertDialog(
-                  title: Text('Info'),
-                  content: Text('Dialog Test'),
-                );
-              });
-        },
-      ),
     );
   }
 }

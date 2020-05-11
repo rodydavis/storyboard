@@ -40,6 +40,18 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
+      childrenLabel: 'Custom Sized Children',
+      sizedChildren: [
+        for (var i = 0; i < 25; i++)
+          CustomScreen(
+            // label: 'Screen$i',
+            size: Size(400, 700),
+            child: _generateScreen(
+              title: Text('Screen$i'),
+              color: RandomColor(i).randomColor(),
+            ),
+          ),
+      ],
       children: [
         for (var i = 0; i < 25; i++)
           SizedBox.fromSize(
@@ -56,7 +68,8 @@ class MyApp extends StatelessWidget {
             title: i.toString(),
             children: [
               for (var i = 0; i < 25; i++)
-                SizedBox.fromSize(
+                CustomScreen(
+                  label: 'Screen$i',
                   size: Size(400, 700),
                   child: _generateScreen(
                     title: Text('Screen$i'),
