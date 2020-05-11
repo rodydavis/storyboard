@@ -22,6 +22,16 @@ class MyApp extends StatelessWidget {
             ),
           ),
       ],
+      sizedChildren: [
+        for (var i = 4; i < 20; i++)
+          CustomScreen(
+            size: Size(i * 50.0, i * 100.0),
+            child: _generateScreen(
+              title: Text('Screen$i'),
+              color: RandomColor(i).randomColor(),
+            ),
+          ),
+      ],
     );
   }
 }
