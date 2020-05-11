@@ -6,7 +6,12 @@ class CustomRect extends CustomClipper<Rect> {
   CustomRect(this.offset);
   @override
   Rect getClip(Size size) {
-    return Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height);
+    return Rect.fromLTWH(
+      offset.dx,
+      offset.dy,
+      size.width,
+      size.height,
+    );
   }
 
   @override
