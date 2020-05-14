@@ -49,7 +49,6 @@ class StoryBoard extends StatefulWidget {
         _widgetsApp = null,
         _cupertinoApp = null,
         _widgets = true,
-        screenBuilder = null,
         screenSize = childSize,
         customRoutes = null,
         hideAppBar = !showAppBar,
@@ -73,7 +72,6 @@ class StoryBoard extends StatefulWidget {
     this.customAppBar,
     this.customRoutes,
     this.crossAxisCount,
-    this.screenBuilder,
     this.title = _kTitle,
     this.laneBuilder,
     this.childrenLabel = 'Children',
@@ -106,7 +104,6 @@ class StoryBoard extends StatefulWidget {
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
-    this.screenBuilder,
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
@@ -139,7 +136,6 @@ class StoryBoard extends StatefulWidget {
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
-    this.screenBuilder,
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
@@ -169,7 +165,6 @@ class StoryBoard extends StatefulWidget {
     this.initialOffset,
     this.initialScale,
     this.customLanes,
-    this.screenBuilder,
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
@@ -241,9 +236,6 @@ class StoryBoard extends StatefulWidget {
   /// Title for AppBar
   final String title;
 
-  /// Optionally wrap the screen building process to customize the label
-  final ScreenBuilder screenBuilder;
-
   /// Optionally wrap the lane building process to customize the look
   final LaneBuilder laneBuilder;
 
@@ -301,6 +293,12 @@ class StoryboardController extends State<StoryBoard> {
     }
     if (oldWidget.orientation != widget.orientation) {
       if (mounted) setState(() {});
+    }
+    if (oldWidget.initialScale != widget.initialScale) {
+      updateScale(widget.initialScale, true);
+    }
+    if (oldWidget.initialOffset != widget.initialOffset) {
+      updateOffset(widget.initialOffset, true);
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -428,9 +426,6 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   Size get size {
-    if (widget.screenBuilder != null) {
-      return widget.screenSize;
-    }
     if (widget.screenSize != null) {
       return Size(
         widget.screenSize.width,
@@ -448,37 +443,10 @@ class StoryboardController extends State<StoryBoard> {
     Size customSize,
   }) {
     final _size = customSize ?? widget.screenSize;
-    // if (widget.screenBuilder != null) {
-    //   return CustomScreen(
-    //     size: size,
-    //     child: Material(
-    //       child: widget.screenBuilder(
-    //         context,
-    //         route,
-    //         _buildApp(_size, route, child, customWidget),
-    //       ),
-    //     ),
-    //   );
-    // }
     return CustomScreen(
       size: size,
       child: _buildApp(_size, route, child, customWidget),
     );
-    // return CustomScreen(
-    //   size: size,
-    //   child: Column(
-    //     mainAxisSize: MainAxisSize.min,
-    //     children: [
-    //       _buildApp(_size, route, child, customWidget),
-    //       if (label != null)
-    //         Container(
-    //           height: _kLabelHeight,
-    //           width: _size.width,
-    //           child: Center(child: RoundedLabel(label)),
-    //         ),
-    //     ],
-    //   ),
-    // );
   }
 
   Widget _buildApp(

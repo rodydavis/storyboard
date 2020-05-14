@@ -1,3 +1,8 @@
+## 0.1.6
+
+* Removing screenBuilder
+* Fixing #18
+
 ## 0.1.5
 
 * Adding Device Frame Option
