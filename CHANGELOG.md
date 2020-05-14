@@ -1,3 +1,8 @@
+## 0.1.5
+
+* Adding Device Frame Option
+* Updated Example
+
 ## 0.1.4
 
 * Adding Pan/Scroll Events with TrackPad or Scroll Wheel

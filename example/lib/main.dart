@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
       usePreferences: true,
       crossAxisCount: 7,
       canPanAndScrollWithGesture: true,
+      cupertinoDevice: CupertinoDevice.iPhone8,
       screenSize: Size(400, 700),
       customScreens: [
         for (var i = 0; i < 25; i++)
