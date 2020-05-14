@@ -1,3 +1,7 @@
+## 0.1.4
+
+* Adding Pan/Scroll Events with TrackPad or Scroll Wheel
+
 ## 0.1.3
 
 * Fixes #15 Scale Reset

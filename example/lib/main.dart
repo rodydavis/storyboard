@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
       enabled: true,
       usePreferences: true,
       crossAxisCount: 7,
+      canPanAndScrollWithGesture: true,
       screenSize: Size(400, 700),
       customScreens: [
         for (var i = 0; i < 25; i++)

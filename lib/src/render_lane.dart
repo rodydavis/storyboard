@@ -79,60 +79,55 @@ class _Lane extends StatelessWidget {
       _itemsPerRow = _children.length;
     }
     Widget _child;
-    if (size == null) {
-      _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
-    } else {
-      final _gridSize = Size(
-        (_kSpacing + size.width) * _itemsPerRow,
-        (_kSpacing + size.height) * _rows,
-      );
-      _child = buildGridLane(_gridSize, _children, context);
-    }
+    _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
     if (laneBuilder != null) {
       return laneBuilder(context, title, _child);
     }
     return _child;
   }
 
-  Widget buildGridLane(
-      Size gridSize, List<CustomScreen> _children, BuildContext context) {
-    return Container(
-      margin: EdgeInsets.all(_kSpacing / 2),
-      child: SizedBox.fromSize(
-        size: gridSize,
-        child: GridView(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount ?? children.length,
-            crossAxisSpacing: _kSpacing,
-            mainAxisSpacing: _kSpacing,
-            childAspectRatio: size.width / size.height,
-          ),
-          children: _children.map((e) {
-            Widget _child = SizedBox.fromSize(
-              size: e?.size ?? size,
-              child: e.child,
-            );
-            if (itemBuilder != null) {
-              _child = itemBuilder(context, _child);
-            }
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildChild(context, e),
-                if (e?.label != null)
-                  Container(
-                    height: _kLabelHeight,
-                    child: Center(child: RoundedLabel(e.label)),
-                  ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
+  // Widget buildGridLane(
+  //     Size gridSize, List<CustomScreen> _children, BuildContext context) {
+  //   return Container(
+  //     margin: EdgeInsets.all(_kSpacing / 2),
+  //     child: SizedBox.fromSize(
+  //       size: gridSize,
+  //       child: GridView(
+  //         shrinkWrap: true,
+  //         physics: const CustomNeverScrollPhysics(),
+  //         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //           crossAxisCount: crossAxisCount ?? children.length,
+  //           crossAxisSpacing: _kSpacing,
+  //           mainAxisSpacing: _kSpacing,
+  //           childAspectRatio: size.width / size.height,
+  //         ),
+  //         children: _children.map((e) {
+  //           Widget _child = SizedBox.fromSize(
+  //             size: e?.size ?? size,
+  //             child: ClipRect(
+  //               clipper: CustomRect(Offset(0, 0)),
+  //               child: e.child,
+  //             ),
+  //           );
+  //           if (itemBuilder != null) {
+  //             _child = itemBuilder(context, _child);
+  //           }
+  //           return Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               _buildChild(context, e),
+  //               if (e?.label != null)
+  //                 Container(
+  //                   height: _kLabelHeight,
+  //                   child: Center(child: RoundedLabel(e.label)),
+  //                 ),
+  //             ],
+  //           );
+  //         }).toList(),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget buildWrapLane(int _rows, List<CustomScreen> _children,
       int _itemsPerRow, BuildContext context) {
@@ -161,9 +156,10 @@ class _Lane extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(_kSpacing / 2),
-                      width: e.size?.width ?? size?.width,
-                      height: e?.size?.height ?? size?.height,
-                      child: _buildChild(context, e),
+                      child: SizedBox.fromSize(
+                        size: e?.size ?? size,
+                        child: _buildChild(context, e),
+                      ),
                     ),
                     if (e?.label != null)
                       Container(
