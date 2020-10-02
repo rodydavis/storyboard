@@ -68,4 +68,4 @@ customRoutes: [
 
 ## Misc
 
-Now you can test all you screens with hot reload! You can also disable the widget at anytime by setting `enabled` to false. You will need to do a hot restart after you change this value.
+Now you can test all your screens with a hot reload! You can also disable the widget at any time by setting `enabled` to false. You will need to do a hot restart after you change this value.
