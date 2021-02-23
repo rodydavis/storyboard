@@ -12,8 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^0.5.7
-  device_frame: ^0.1.1
+  shared_preferences: ^0.5.12+4
+  device_frame: ^0.3.0
 
 dev_dependencies:
   flutter_test:
