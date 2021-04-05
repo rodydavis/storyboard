@@ -246,10 +246,10 @@ class StoryBoard extends StatefulWidget {
   final bool canPanAndScrollWithGesture;
 
   /// Use a cupertino device for every screen and ignore the size
-  final CupertinoDevice cupertinoDevice;
+  final DeviceInfo cupertinoDevice;
 
   /// Use a android device for every screen and ignore the size
-  final AndroidDevice androidDevice;
+  final DeviceInfo androidDevice;
 
   /// Device orientation for every screen and ignore the size
   final Orientation orientation;

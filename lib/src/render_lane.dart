@@ -14,8 +14,8 @@ class CustomScreen {
   final String label;
   final Size size;
   final Widget child;
-  final CupertinoDevice cupertinoDevice;
-  final AndroidDevice androidDevice;
+  final DeviceInfo cupertinoDevice;
+  final DeviceInfo androidDevice;
   final Orientation orientation;
 
   CustomScreen({
@@ -31,8 +31,8 @@ class CustomScreen {
     String label,
     Size size,
     Widget child,
-    CupertinoDevice cupertinoDevice,
-    AndroidDevice androidDevice,
+    DeviceInfo cupertinoDevice,
+    DeviceInfo androidDevice,
     Orientation orientation,
   }) {
     return CustomScreen(
@@ -73,8 +73,8 @@ class _Lane extends StatelessWidget {
   final String title;
   final Widget Function(BuildContext, Widget) itemBuilder;
   final BoxShadow shadow;
-  final CupertinoDevice cupertinoDevice;
-  final AndroidDevice androidDevice;
+  final DeviceInfo cupertinoDevice;
+  final DeviceInfo androidDevice;
   final Orientation orientation;
 
   @override
@@ -154,20 +154,26 @@ class _Lane extends StatelessWidget {
             if (itemBuilder != null) {
               _child = itemBuilder(context, _child);
             }
-            CupertinoDevice _ios = e?.cupertinoDevice ?? cupertinoDevice;
-            AndroidDevice _android = e?.androidDevice ?? androidDevice;
+            DeviceInfo _ios = e?.cupertinoDevice ?? cupertinoDevice;
+            DeviceInfo _android = e?.androidDevice ?? androidDevice;
             Orientation _orientation = e?.orientation ?? orientation;
             if (_ios != null)
-              return CupertinoDeviceFrame(
+              return DeviceFrame(
                 orientation: _orientation,
                 device: _ios,
-                child: _child,
+                screen: VirtualKeyboard(
+                  isEnabled: true,
+                  child: _child,
+                ),
               );
             if (_android != null)
-              return AndroidDeviceFrame(
+              return DeviceFrame(
                 orientation: _orientation,
                 device: _android,
-                child: _child,
+                screen: VirtualKeyboard(
+                  isEnabled: true,
+                  child: _child,
+                ),
               );
             return SizedBox.fromSize(
               size: e.size,
