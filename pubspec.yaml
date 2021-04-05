@@ -3,7 +3,8 @@ description: A Flutter package to show a storyboard of all your widgets.
 version: 0.1.6
 author: Rody Davis <rody.davis.jr@gmail.com>
 maintainer: Rody Davis (@rodydavis)
-homepage: https://github.com/rodydavis/storyboard
+homepage: https://github.com/rodydavis/plugins
+repository: https://github.com/rodydavis/storyboard
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
