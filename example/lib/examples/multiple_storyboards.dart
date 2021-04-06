@@ -58,7 +58,6 @@ class StoryboardInApp extends StatelessWidget {
               width: 400,
               height: 600,
               child: StoryBoard(
-                usePreferences: true,
                 crossAxisCount: 7,
                 childSize: Size(400, 700), // <-- Needed for Child Observer
                 showAppBar: true,
@@ -81,7 +80,6 @@ class StoryboardInApp extends StatelessWidget {
               width: 400,
               height: 600,
               child: StoryBoard(
-                usePreferences: true,
                 crossAxisCount: 7,
                 childSize: Size(400, 700), // <-- Needed for Child Observer
                 showAppBar: true,

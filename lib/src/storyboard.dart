@@ -4,7 +4,6 @@ import 'package:device_frame/device_frame.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'custom_rect_clipper.dart';
 import 'media_query_observer.dart';
@@ -34,14 +33,12 @@ class StoryBoard extends StatefulWidget {
     Size? childSize,
     this.initialOffset = Offset.zero,
     this.initialScale = _STARTSCALE,
-    this.usePreferences = false,
     this.customAppBar,
     this.crossAxisCount,
     this.title = _kTitle,
     this.laneBuilder,
     this.childrenLabel = 'Children',
     this.sizedChildrenLabel = 'Sized Children',
-    this.canPanAndScrollWithGesture = true,
     this.orientation,
     this.androidDevice,
     this.cupertinoDevice,
@@ -69,7 +66,6 @@ class StoryBoard extends StatefulWidget {
     this.initialOffset = Offset.zero,
     this.initialScale = _STARTSCALE,
     this.customLanes,
-    this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
     this.crossAxisCount,
@@ -78,7 +74,6 @@ class StoryBoard extends StatefulWidget {
     this.childrenLabel = 'Children',
     this.sizedChildrenLabel = 'Sized Children',
     this.sizedChildren,
-    this.canPanAndScrollWithGesture = true,
     this.orientation,
     this.androidDevice,
     this.cupertinoDevice,
@@ -102,7 +97,6 @@ class StoryBoard extends StatefulWidget {
     this.initialOffset = Offset.zero,
     this.initialScale = _STARTSCALE,
     this.customLanes,
-    this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
     this.crossAxisCount,
@@ -111,7 +105,6 @@ class StoryBoard extends StatefulWidget {
     this.sizedChildren,
     this.childrenLabel = 'Children',
     this.sizedChildrenLabel = 'Sized Children',
-    this.canPanAndScrollWithGesture = true,
     this.orientation,
     this.androidDevice,
     this.cupertinoDevice,
@@ -133,7 +126,6 @@ class StoryBoard extends StatefulWidget {
     this.initialOffset = Offset.zero,
     this.initialScale = _STARTSCALE,
     this.customLanes,
-    this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
     this.crossAxisCount,
@@ -142,7 +134,6 @@ class StoryBoard extends StatefulWidget {
     this.sizedChildren,
     this.childrenLabel = 'Children',
     this.sizedChildrenLabel = 'Sized Children',
-    this.canPanAndScrollWithGesture = true,
     this.orientation,
     this.androidDevice,
     this.cupertinoDevice,
@@ -164,7 +155,6 @@ class StoryBoard extends StatefulWidget {
     this.initialOffset = Offset.zero,
     this.initialScale = _STARTSCALE,
     this.customLanes,
-    this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
     this.crossAxisCount,
@@ -173,7 +163,6 @@ class StoryBoard extends StatefulWidget {
     this.sizedChildren,
     this.childrenLabel = 'Children',
     this.sizedChildrenLabel = 'Sized Children',
-    this.canPanAndScrollWithGesture = true,
     this.orientation,
     this.androidDevice,
     this.cupertinoDevice,
@@ -213,9 +202,6 @@ class StoryBoard extends StatefulWidget {
   /// Size for each screen
   final Size? screenSize;
 
-  /// Use shared preferences to store the values
-  final bool usePreferences;
-
   /// Wrap your Cupertino App with this widget
   final CupertinoApp? _cupertinoApp;
 
@@ -240,9 +226,6 @@ class StoryBoard extends StatefulWidget {
   /// Label for Custom Screens or Children
   final String? childrenLabel, sizedChildrenLabel;
 
-  /// Can pan with trackpad / scroll wheel and scroll when shift is selected.
-  final bool canPanAndScrollWithGesture;
-
   /// Use a cupertino device for every screen and ignore the size
   final DeviceInfo? cupertinoDevice;
 
@@ -263,14 +246,10 @@ class StoryBoard extends StatefulWidget {
 
 class StoryboardController extends State<StoryBoard> {
   final TransformationController _controller = TransformationController();
-  late SharedPreferences _prefs;
   late FocusNode _focusNode;
   Offset _offset = Offset.zero;
-  String _offsetKey = 'flutter_storyboard_offset';
   double _scale = 1;
-  String _scaleKey = 'flutter_storyboard_scale';
   UniqueKey _key = UniqueKey();
-  bool _shiftPressed = false;
 
   @override
   void didUpdateWidget(StoryBoard oldWidget) {
@@ -307,11 +286,6 @@ class StoryboardController extends State<StoryBoard> {
     _controller.value.scale(widget.initialScale);
     final _offset = widget.initialOffset;
     _controller.value.translate(_offset.dx, _offset.dy);
-    if (widget.usePreferences) {
-      SharedPreferences.getInstance().then((value) {
-        _prefs = value;
-      });
-    }
     super.initState();
   }
 

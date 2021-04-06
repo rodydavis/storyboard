@@ -10,7 +10,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StoryBoard(
-      usePreferences: true,
       showAppBar: true,
       children: [
         for (var i = 4; i < 20; i++)

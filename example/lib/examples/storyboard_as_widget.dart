@@ -56,7 +56,6 @@ class StoryboardInApp extends StatelessWidget {
           widthFactor: 0.7,
           heightFactor: 0.7,
           child: StoryBoard(
-            usePreferences: true,
             crossAxisCount: 7,
             showAppBar: true,
             children: [

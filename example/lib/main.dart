@@ -12,9 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoryBoard.material(
       enabled: true,
-      usePreferences: true,
       crossAxisCount: 7,
-      canPanAndScrollWithGesture: true,
       cupertinoDevice: Devices.ios.iPhone11,
       screenSize: Size(400, 700),
       customScreens: [
@@ -24,14 +22,14 @@ class MyApp extends StatelessWidget {
             color: RandomColor(i + 25).randomColor(),
           ),
       ],
-      customRoutes: [
+      customRoutes: const [
         RouteSettings(name: '/about'),
         RouteSettings(name: '/counter'),
         RouteSettings(name: '/screen_2'),
         RouteSettings(name: '/screen_5'),
         RouteSettings(
           name: '/screen_8',
-          arguments: <String, dynamic>{"id": 1234},
+          arguments: <String, dynamic>{'id': 1234},
         ),
       ],
       child: MaterialApp(

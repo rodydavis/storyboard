@@ -1,3 +1,10 @@
+## 1.0.0-dev
+
+* Switch to InteractiveViewer
+* Null Safety
+* Removed `canPanAndScrollWithGesture`
+* Removed `usePreferences` and `shared_preferences`
+
 ## 0.1.7
 
 * Upgrading dependencies

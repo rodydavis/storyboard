@@ -12,7 +12,6 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoryBoard.material(
       enabled: true,
-      usePreferences: true,
       crossAxisCount: 7,
       screenSize: Size(400, 700),
       customScreens: [
