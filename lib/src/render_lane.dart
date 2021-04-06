@@ -5,22 +5,22 @@ class CustomLane {
   final List<CustomScreen> children;
 
   CustomLane({
-    @required this.title,
-    @required this.children,
+    required this.title,
+    required this.children,
   });
 }
 
 class CustomScreen {
-  final String label;
-  final Size size;
+  final String? label;
+  final Size? size;
   final Widget child;
-  final DeviceInfo cupertinoDevice;
-  final DeviceInfo androidDevice;
-  final Orientation orientation;
+  final DeviceInfo? cupertinoDevice;
+  final DeviceInfo? androidDevice;
+  final Orientation? orientation;
 
   CustomScreen({
-    @required this.size,
-    @required this.child,
+    required this.size,
+    required this.child,
     this.label,
     this.androidDevice,
     this.cupertinoDevice,
@@ -28,12 +28,12 @@ class CustomScreen {
   });
 
   CustomScreen copyWith({
-    String label,
-    Size size,
-    Widget child,
-    DeviceInfo cupertinoDevice,
-    DeviceInfo androidDevice,
-    Orientation orientation,
+    String? label,
+    Size? size,
+    Widget? child,
+    DeviceInfo? cupertinoDevice,
+    DeviceInfo? androidDevice,
+    Orientation? orientation,
   }) {
     return CustomScreen(
       label: label ?? this.label,
@@ -47,42 +47,46 @@ class CustomScreen {
 }
 
 typedef LaneBuilder = Widget Function(
-    BuildContext context, String title, Widget child);
+  BuildContext context,
+  String? title,
+  Widget child,
+);
 
 class _Lane extends StatelessWidget {
   const _Lane({
-    Key key,
-    @required this.children,
-    @required this.crossAxisCount,
+    Key? key,
+    required this.children,
+    required this.crossAxisCount,
+    required this.scale,
+    required this.androidDevice,
+    required this.cupertinoDevice,
+    this.title,
     this.itemBuilder,
     this.laneBuilder,
-    @required this.scale,
-    this.title,
     this.size,
     this.shadow,
-    @required this.androidDevice,
-    @required this.cupertinoDevice,
     this.orientation = Orientation.portrait,
   }) : super(key: key);
 
   final List<CustomScreen> children;
-  final int crossAxisCount;
-  final Size size;
+  final int? crossAxisCount;
   final double scale;
-  final LaneBuilder laneBuilder;
-  final String title;
-  final Widget Function(BuildContext, Widget) itemBuilder;
-  final BoxShadow shadow;
-  final DeviceInfo cupertinoDevice;
-  final DeviceInfo androidDevice;
-  final Orientation orientation;
+  final DeviceInfo? cupertinoDevice;
+  final DeviceInfo? androidDevice;
+  final Orientation? orientation;
+  final Widget Function(BuildContext, Widget)? itemBuilder;
+  final LaneBuilder? laneBuilder;
+  final String? title;
+  final Size? size;
+  final BoxShadow? shadow;
 
   @override
   Widget build(BuildContext context) {
     List<CustomScreen> _children = [];
     for (final child in children) {
       if (itemBuilder != null) {
-        _children.add(child.copyWith(child: itemBuilder(context, child.child)));
+        _children
+            .add(child.copyWith(child: itemBuilder!(context, child.child)));
       } else {
         _children.add(child);
       }
@@ -90,8 +94,8 @@ class _Lane extends StatelessWidget {
     int _itemsPerRow;
     int _rows;
     if (crossAxisCount != null) {
-      _rows = (_children.length / crossAxisCount).ceil();
-      _itemsPerRow = crossAxisCount;
+      _rows = (_children.length / crossAxisCount!).ceil();
+      _itemsPerRow = crossAxisCount!;
     } else {
       _rows = 1;
       _itemsPerRow = _children.length;
@@ -99,7 +103,7 @@ class _Lane extends StatelessWidget {
     Widget _child;
     _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
     if (laneBuilder != null) {
-      return laneBuilder(context, title, _child);
+      return laneBuilder!(context, title, _child);
     }
     return _child;
   }
@@ -107,15 +111,13 @@ class _Lane extends StatelessWidget {
   Widget buildWrapLane(int _rows, List<CustomScreen> _children,
       int _itemsPerRow, BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(_kSpacing / 2),
+      margin: const EdgeInsets.all(_kSpacing / 2),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < _rows; i++)
             Row(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: _children
@@ -129,10 +131,10 @@ class _Lane extends StatelessWidget {
                       padding: const EdgeInsets.all(_kSpacing / 2),
                       child: _buildChild(context, e),
                     ),
-                    if (e?.label != null)
-                      Container(
+                    if (e.label != null)
+                      SizedBox(
                         height: _kLabelHeight,
-                        child: Center(child: RoundedLabel(e.label)),
+                        child: Center(child: RoundedLabel(e.label!)),
                       ),
                   ],
                 );
@@ -145,19 +147,20 @@ class _Lane extends StatelessWidget {
 
   Widget _buildChild(BuildContext context, CustomScreen e) {
     return Container(
-      decoration: shadow == null ? null : BoxDecoration(boxShadow: [shadow]),
+      decoration: shadow == null ? null : BoxDecoration(boxShadow: [shadow!]),
       child: MediaQueryObserver(
         data: MediaQuery.of(context).copyWith(size: size),
         child: Builder(
           builder: (context) {
             Widget _child = e.child;
             if (itemBuilder != null) {
-              _child = itemBuilder(context, _child);
+              _child = itemBuilder!(context, _child);
             }
-            DeviceInfo _ios = e?.cupertinoDevice ?? cupertinoDevice;
-            DeviceInfo _android = e?.androidDevice ?? androidDevice;
-            Orientation _orientation = e?.orientation ?? orientation;
-            if (_ios != null)
+            DeviceInfo? _ios = e.cupertinoDevice ?? cupertinoDevice;
+            DeviceInfo? _android = e.androidDevice ?? androidDevice;
+            Orientation _orientation =
+                e.orientation ?? orientation ?? Orientation.portrait;
+            if (_ios != null) {
               return DeviceFrame(
                 orientation: _orientation,
                 device: _ios,
@@ -166,7 +169,8 @@ class _Lane extends StatelessWidget {
                   child: _child,
                 ),
               );
-            if (_android != null)
+            }
+            if (_android != null) {
               return DeviceFrame(
                 orientation: _orientation,
                 device: _android,
@@ -175,6 +179,7 @@ class _Lane extends StatelessWidget {
                   child: _child,
                 ),
               );
+            }
             return SizedBox.fromSize(
               size: e.size,
               child: _child,

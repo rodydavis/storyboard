@@ -2,11 +2,11 @@ import 'package:flutter/widgets.dart';
 
 class MediaQueryObserver extends StatefulWidget {
   final Widget child;
-  final MediaQueryData data;
+  final MediaQueryData? data;
 
   const MediaQueryObserver({
-    @required this.child,
-    this.data,
+    required this.child,
+    required this.data,
   });
 
   @override
@@ -23,21 +23,21 @@ class _MediaQueryObserverState extends State<MediaQueryObserver>
 
   @override
   void initState() {
-    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance?.addObserver(this);
     super.initState();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    WidgetsBinding.instance?.removeObserver(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return MediaQuery(
-      data: widget?.data ??
-          MediaQueryData.fromWindow(WidgetsBinding.instance.window),
+      data: widget.data ??
+          MediaQueryData.fromWindow(WidgetsBinding.instance!.window),
       child: widget.child,
     );
   }

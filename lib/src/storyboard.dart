@@ -4,11 +4,9 @@ import 'package:device_frame/device_frame.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'custom_rect_clipper.dart';
-import 'custom_stack.dart';
 import 'media_query_observer.dart';
 import 'nested_app.dart';
 import 'rounded_label.dart';
@@ -18,6 +16,9 @@ part 'render_lane.dart';
 const _kSpacing = 40.0;
 const _kLabelHeight = 65.0;
 const _kCompactBreakpoint = 400.0;
+const double _MAXSIZE = 100000;
+const double _MINSCALE = 0.0001;
+const double _STARTSCALE = 0.35;
 const _kTitle = 'Storyboard';
 
 typedef ScreenBuilder = Widget Function(
@@ -25,14 +26,14 @@ typedef ScreenBuilder = Widget Function(
 
 class StoryBoard extends StatefulWidget {
   const StoryBoard({
-    Key key,
+    Key? key,
     this.children,
     this.customLanes,
     this.sizedChildren,
     bool showAppBar = false,
-    Size childSize,
-    this.initialOffset,
-    this.initialScale,
+    Size? childSize,
+    this.initialOffset = Offset.zero,
+    this.initialScale = _STARTSCALE,
     this.usePreferences = false,
     this.customAppBar,
     this.crossAxisCount,
@@ -58,15 +59,15 @@ class StoryBoard extends StatefulWidget {
         super(key: key);
 
   const StoryBoard.app({
-    Key key,
-    MaterialApp materialApp,
-    WidgetsApp widgetsApp,
-    CupertinoApp cupertinoApp,
-    List<Widget> customScreens,
+    Key? key,
+    MaterialApp? materialApp,
+    WidgetsApp? widgetsApp,
+    CupertinoApp? cupertinoApp,
+    List<Widget>? customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
-    this.initialOffset,
-    this.initialScale,
+    this.initialOffset = Offset.zero,
+    this.initialScale = _STARTSCALE,
     this.customLanes,
     this.usePreferences = false,
     this.customAppBar,
@@ -93,14 +94,14 @@ class StoryBoard extends StatefulWidget {
         super(key: key);
 
   const StoryBoard.cupertino({
-    Key key,
-    Widget child,
-    List<Widget> customScreens,
+    Key? key,
+    required CupertinoApp child,
+    List<Widget>? customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
-    this.initialOffset,
+    this.initialOffset = Offset.zero,
+    this.initialScale = _STARTSCALE,
     this.customLanes,
-    this.initialScale,
     this.usePreferences = false,
     this.customAppBar,
     this.customRoutes,
@@ -121,17 +122,16 @@ class StoryBoard extends StatefulWidget {
         children = customScreens,
         _widgets = false,
         hideAppBar = false,
-        assert(child != null),
         super(key: key);
 
   const StoryBoard.widgets({
-    Key key,
-    Widget child,
-    List<Widget> customScreens,
+    Key? key,
+    required WidgetsApp child,
+    List<Widget>? customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
-    this.initialOffset,
-    this.initialScale,
+    this.initialOffset = Offset.zero,
+    this.initialScale = _STARTSCALE,
     this.customLanes,
     this.usePreferences = false,
     this.customAppBar,
@@ -153,17 +153,16 @@ class StoryBoard extends StatefulWidget {
         children = customScreens,
         _widgets = false,
         hideAppBar = false,
-        assert(child != null),
         super(key: key);
 
   const StoryBoard.material({
-    Key key,
-    Widget child,
-    List<Widget> customScreens,
+    Key? key,
+    required MaterialApp child,
+    List<Widget>? customScreens,
     this.enabled = true,
     this.screenSize = const Size(400, 700),
-    this.initialOffset,
-    this.initialScale,
+    this.initialOffset = Offset.zero,
+    this.initialScale = _STARTSCALE,
     this.customLanes,
     this.usePreferences = false,
     this.customAppBar,
@@ -185,23 +184,22 @@ class StoryBoard extends StatefulWidget {
         children = customScreens,
         _widgets = false,
         hideAppBar = false,
-        assert(child != null),
         super(key: key);
 
   /// Override the default app bar of the storyboard
-  final PreferredSizeWidget customAppBar;
+  final PreferredSizeWidget? customAppBar;
 
   /// Custom routes you want to show with test data
-  final List<RouteSettings> customRoutes;
+  final List<RouteSettings>? customRoutes;
 
   /// Custom screens you want to show
-  final List<Widget> children;
+  final List<Widget>? children;
 
   /// Children that can have custom sizes
-  final List<CustomScreen> sizedChildren;
+  final List<CustomScreen>? sizedChildren;
 
   /// List of custom lanes
-  final List<CustomLane> customLanes;
+  final List<CustomLane>? customLanes;
 
   /// You can disable this widget at any time and just return the child
   final bool enabled;
@@ -213,22 +211,22 @@ class StoryBoard extends StatefulWidget {
   final double initialScale;
 
   /// Size for each screen
-  final Size screenSize;
+  final Size? screenSize;
 
   /// Use shared preferences to store the values
   final bool usePreferences;
 
   /// Wrap your Cupertino App with this widget
-  final CupertinoApp _cupertinoApp;
+  final CupertinoApp? _cupertinoApp;
 
   /// Wrap your Material App with this widget
-  final MaterialApp _materialApp;
+  final MaterialApp? _materialApp;
 
   /// Wrap your Widgets App with this widget
-  final WidgetsApp _widgetsApp;
+  final WidgetsApp? _widgetsApp;
 
   /// Number of widgets to show in a row instead of maxLaneWidth
-  final int crossAxisCount;
+  final int? crossAxisCount;
 
   /// Optionally hide the AppBar if used as a widget
   final bool hideAppBar;
@@ -237,25 +235,25 @@ class StoryBoard extends StatefulWidget {
   final String title;
 
   /// Optionally wrap the lane building process to customize the look
-  final LaneBuilder laneBuilder;
+  final LaneBuilder? laneBuilder;
 
   /// Label for Custom Screens or Children
-  final String childrenLabel, sizedChildrenLabel;
+  final String? childrenLabel, sizedChildrenLabel;
 
   /// Can pan with trackpad / scroll wheel and scroll when shift is selected.
   final bool canPanAndScrollWithGesture;
 
   /// Use a cupertino device for every screen and ignore the size
-  final DeviceInfo cupertinoDevice;
+  final DeviceInfo? cupertinoDevice;
 
   /// Use a android device for every screen and ignore the size
-  final DeviceInfo androidDevice;
+  final DeviceInfo? androidDevice;
 
   /// Device orientation for every screen and ignore the size
-  final Orientation orientation;
+  final Orientation? orientation;
 
   /// Device Frame style
-  final DeviceFrameStyle deviceFrameStyle;
+  final DeviceFrameStyle? deviceFrameStyle;
 
   final bool _widgets;
 
@@ -264,11 +262,11 @@ class StoryBoard extends StatefulWidget {
 }
 
 class StoryboardController extends State<StoryBoard> {
-  FocusNode _focusNode;
+  final TransformationController _controller = TransformationController();
+  late SharedPreferences _prefs;
+  late FocusNode _focusNode;
   Offset _offset = Offset.zero;
   String _offsetKey = 'flutter_storyboard_offset';
-  SharedPreferences _prefs;
-  int _row = 0;
   double _scale = 1;
   String _scaleKey = 'flutter_storyboard_scale';
   UniqueKey _key = UniqueKey();
@@ -294,12 +292,6 @@ class StoryboardController extends State<StoryBoard> {
     if (oldWidget.orientation != widget.orientation) {
       if (mounted) setState(() {});
     }
-    if (oldWidget.initialScale != widget.initialScale) {
-      updateScale(widget.initialScale, true);
-    }
-    if (oldWidget.initialOffset != widget.initialOffset) {
-      updateOffset(widget.initialOffset, true);
-    }
     super.didUpdateWidget(oldWidget);
   }
 
@@ -312,23 +304,12 @@ class StoryboardController extends State<StoryBoard> {
   @override
   void initState() {
     _focusNode = FocusNode();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      updateScale(widget?.initialScale ?? 0.75, true);
-      updateOffset(widget?.initialOffset ?? Offset(10, -_kSpacing), true);
-      if (mounted) setState(() {});
-    });
+    _controller.value.scale(widget.initialScale);
+    final _offset = widget.initialOffset;
+    _controller.value.translate(_offset.dx, _offset.dy);
     if (widget.usePreferences) {
       SharedPreferences.getInstance().then((value) {
         _prefs = value;
-        final _savedScale = _prefs.getDouble(_scaleKey);
-        if (_savedScale != null) {
-          updateScale(_savedScale, true);
-        }
-        final _savedOffsetDx = _prefs.getDouble('$_offsetKey\_dx');
-        final _savedOffsetDy = _prefs.getDouble('$_offsetKey\_dy');
-        if (_savedOffsetDx != null && _savedOffsetDy != null) {
-          updateOffset(Offset(_savedOffsetDx, _savedOffsetDy), true);
-        }
       });
     }
     super.initState();
@@ -340,109 +321,55 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   Widget get app {
-    if (materialApp != null) return materialApp;
-    if (widgetsApp != null) return widgetsApp;
-    if (cupertinoApp != null) return cupertinoApp;
-    return null;
+    if (materialApp != null) return materialApp!;
+    if (widgetsApp != null) return widgetsApp!;
+    if (cupertinoApp != null) return cupertinoApp!;
+    return Container();
   }
 
-  MaterialApp get materialApp => widget?._materialApp;
+  MaterialApp? get materialApp => widget._materialApp;
+  WidgetsApp? get widgetsApp => widget._widgetsApp;
+  CupertinoApp? get cupertinoApp => widget._cupertinoApp;
 
-  WidgetsApp get widgetsApp => widget?._widgetsApp;
-
-  CupertinoApp get cupertinoApp => widget?._cupertinoApp;
-
-  Widget get home {
+  Widget? get home {
     if (materialApp != null) return materialApp?.home;
     if (widgetsApp != null) return widgetsApp?.home;
     if (cupertinoApp != null) return cupertinoApp?.home;
     return null;
   }
 
-  Map<String, WidgetBuilder> get routes {
+  Map<String, WidgetBuilder>? get routes {
     if (materialApp != null) return materialApp?.routes;
     if (widgetsApp != null) return widgetsApp?.routes;
     if (cupertinoApp != null) return cupertinoApp?.routes;
     return null;
   }
 
-  String get initialRoute {
+  String? get initialRoute {
     if (materialApp != null) return materialApp?.initialRoute;
     if (widgetsApp != null) return widgetsApp?.initialRoute;
     if (cupertinoApp != null) return cupertinoApp?.initialRoute;
     return null;
   }
 
-  void _handleKeyPress(RawKeyEvent key) {
-    // Scale keys
-    if (key.isKeyPressed(LogicalKeyboardKey.minus)) {
-      updateScale(-0.02);
-    }
-    if (key.isKeyPressed(LogicalKeyboardKey.equal)) {
-      updateScale(0.02);
-    }
-    // Directional Keys
-    if (key.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
-      updateOffset(Offset(15.0, 0.0));
-    }
-    if (key.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
-      updateOffset(Offset(-15.0, 0.0));
-    }
-    if (key.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
-      updateOffset(Offset(0.0, 15.0));
-    }
-    if (key.isKeyPressed(LogicalKeyboardKey.arrowDown)) {
-      updateOffset(Offset(0.0, -15.0));
-    }
-
-    // Meta Keys
-    _shiftPressed = key.isShiftPressed;
-  }
-
-  void updateOffset(Offset value, [bool force = false]) {
-    if (mounted)
-      setState(() {
-        if (force) {
-          _offset = value;
-        } else {
-          _offset += value;
-        }
-      });
-    _prefs?.setDouble('$_offsetKey\_dx', _offset.dx);
-    _prefs?.setDouble('$_offsetKey\_dy', _offset.dy);
-  }
-
-  void updateScale(double value, [bool force = false]) {
-    if (mounted)
-      setState(() {
-        if (force) {
-          _scale = value;
-        } else {
-          _scale += value;
-        }
-        if (_scale < 0) _scale = 0.01;
-      });
-    _prefs?.setDouble(_scaleKey, _scale);
-  }
-
-  Size get size {
+  Size? get size {
     if (widget.screenSize != null) {
       return Size(
-        widget.screenSize.width,
-        widget.screenSize.height + _kLabelHeight,
+        widget.screenSize!.width,
+        widget.screenSize!.height + _kLabelHeight,
       );
     }
     return null;
   }
 
   CustomScreen _addChild(
-    RouteSettings route, {
-    String label,
-    Widget child,
+    RouteSettings? route, {
+    Widget? child,
+    String? label,
     bool customWidget = false,
-    Size customSize,
+    Size? customSize,
   }) {
-    final _size = customSize ?? widget.screenSize;
+    final Size? _size = customSize ?? widget.screenSize ?? size;
     return CustomScreen(
       size: size,
       child: _buildApp(_size, route, child, customWidget),
@@ -450,9 +377,9 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   Widget _buildApp(
-    Size _size,
-    RouteSettings route,
-    Widget child,
+    Size? _size,
+    RouteSettings? route,
+    Widget? child,
     bool customWidget,
   ) {
     return Material(
@@ -460,47 +387,26 @@ class StoryboardController extends State<StoryBoard> {
       child: SizedBox.fromSize(
         size: _size,
         child: ClipRect(
-          clipper: CustomRect(Offset(0, 0)),
+          clipper: CustomRect(const Offset(0, 0)),
           child: NestedApp(
             route: route,
-            child: child,
             size: _size,
             customWidget: customWidget,
             materialApp: materialApp,
             cupertinoApp: cupertinoApp,
             widgetsApp: widgetsApp,
+            child: child,
           ),
         ),
       ),
     );
   }
 
-  static const double _MAX_ZOOM = 4;
-  static const double _MIN_ZOOM = 0.02;
-
-  void _receivedPointerSignal(PointerSignalEvent event) {
-    if (event is PointerScrollEvent) {
-      GestureBinding.instance.pointerSignalResolver
-          .register(event, _handlePointerScroll);
-    }
-  }
-
-  void _handlePointerScroll(PointerEvent event) {
-    if (!widget.canPanAndScrollWithGesture) return;
-    if (event is PointerScrollEvent) {
-      if (_shiftPressed) {
-        double zoomDelta = (-event.scrollDelta.dy / 300);
-        updateScale(zoomDelta);
-      } else {
-        updateOffset(-event.scrollDelta);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled) return app;
-    final _theme = Theme.of(context);
+    // ignore: unnecessary_nullable_for_final_variable_declarations
+    final ThemeData? _theme = Theme.of(context);
     return MaterialApp(
       key: _key,
       debugShowCheckedModeBanner: false,
@@ -516,256 +422,18 @@ class StoryboardController extends State<StoryBoard> {
           // style: Theme.of(context).brightness == Brightness.dark
           //     ? DeviceFrameStyle.dark()
           //     : DeviceFrameStyle.light(),
-          style: widget?.deviceFrameStyle ?? DeviceFrameStyle.dark(),
+          style: widget.deviceFrameStyle ?? DeviceFrameStyle.dark(),
           child: LayoutBuilder(
             builder: (context, dimens) => Scaffold(
               appBar: _buildAppBar(dimens.maxWidth <= _kCompactBreakpoint),
-              body: Listener(
-                onPointerSignal: _receivedPointerSignal,
-                child: RawKeyboardListener(
-                  focusNode: _focusNode,
-                  onKey: _handleKeyPress,
-                  child: ClipRect(
-                    clipper: CustomRect(Offset.zero),
-                    child: Container(
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: GestureDetector(
-                        onPanUpdate: (details) {
-                          updateOffset(details.delta);
-                        },
-                        behavior: HitTestBehavior.opaque,
-                        child: Transform.scale(
-                          scale: _scale,
-                          alignment: Alignment.center,
-                          child: Stack2(
-                            fit: StackFit.expand,
-                            overflow: Overflow.visible,
-                            children: [
-                              if (widget._widgets)
-                                Positioned2(
-                                  top: _offset.dy,
-                                  left: _offset.dx,
-                                  child: Container(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (widget?.children != null)
-                                          _Lane(
-                                            cupertinoDevice:
-                                                widget.cupertinoDevice,
-                                            androidDevice: widget.androidDevice,
-                                            orientation: widget.orientation,
-                                            laneBuilder: widget.laneBuilder,
-                                            title: widget?.childrenLabel ?? '',
-                                            scale: _scale,
-                                            size: size,
-                                            children: widget.children
-                                                .map(
-                                                  (e) => CustomScreen(
-                                                    size: size,
-                                                    child: e,
-                                                  ),
-                                                )
-                                                .toList(),
-                                            crossAxisCount:
-                                                widget.crossAxisCount,
-                                            shadow: const BoxShadow(
-                                              color: Colors.black45,
-                                              offset: Offset(2.0, 2.0),
-                                              blurRadius: 10.0,
-                                              spreadRadius: 2.0,
-                                            ),
-                                          ),
-                                        if (widget?.sizedChildren != null)
-                                          _Lane(
-                                            cupertinoDevice:
-                                                widget.cupertinoDevice,
-                                            androidDevice: widget.androidDevice,
-                                            orientation: widget.orientation,
-                                            laneBuilder: widget.laneBuilder,
-                                            title: widget?.sizedChildrenLabel ??
-                                                '',
-                                            scale: _scale,
-                                            size: size,
-                                            children: widget.sizedChildren,
-                                            crossAxisCount:
-                                                widget.crossAxisCount,
-                                            shadow: const BoxShadow(
-                                              color: Colors.black45,
-                                              offset: Offset(2.0, 2.0),
-                                              blurRadius: 10.0,
-                                              spreadRadius: 2.0,
-                                            ),
-                                          ),
-                                        if (widget.customLanes != null)
-                                          for (final lane in widget.customLanes)
-                                            _Lane(
-                                              cupertinoDevice:
-                                                  widget.cupertinoDevice,
-                                              androidDevice:
-                                                  widget.androidDevice,
-                                              orientation: widget.orientation,
-                                              laneBuilder: widget.laneBuilder,
-                                              title: lane.title,
-                                              scale: _scale,
-                                              size: size,
-                                              crossAxisCount:
-                                                  widget.crossAxisCount,
-                                              children: lane.children,
-                                              shadow: const BoxShadow(
-                                                color: Colors.black45,
-                                                offset: Offset(2.0, 2.0),
-                                                blurRadius: 10.0,
-                                                spreadRadius: 2.0,
-                                              ),
-                                            ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              if (!widget._widgets) ...[
-                                Positioned2(
-                                  top: _offset.dy,
-                                  left: _offset.dx,
-                                  child: Container(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _Lane(
-                                          cupertinoDevice:
-                                              widget.cupertinoDevice,
-                                          androidDevice: widget.androidDevice,
-                                          orientation: widget.orientation,
-                                          scale: _scale,
-                                          title: 'Main',
-                                          laneBuilder: widget.laneBuilder,
-                                          size: size,
-                                          crossAxisCount: widget.crossAxisCount,
-                                          children: [
-                                            if (initialRoute != null)
-                                              _addChild(
-                                                RouteSettings(
-                                                    name: initialRoute),
-                                                label: 'Initial Route',
-                                              ),
-                                            if (home != null)
-                                              _addChild(
-                                                null,
-                                                label: 'Home',
-                                                child: home,
-                                              ),
-                                          ],
-                                        ),
-                                        if (routes !=
-                                            const <String, WidgetBuilder>{})
-                                          _Lane(
-                                            cupertinoDevice:
-                                                widget.cupertinoDevice,
-                                            androidDevice: widget.androidDevice,
-                                            orientation: widget.orientation,
-                                            title: 'Routes',
-                                            scale: _scale,
-                                            laneBuilder: widget.laneBuilder,
-                                            size: size,
-                                            crossAxisCount:
-                                                widget.crossAxisCount,
-                                            children: [
-                                              for (var i = 0;
-                                                  i < routes.keys.length;
-                                                  i++)
-                                                _addChild(
-                                                  RouteSettings(
-                                                      name: routes.keys
-                                                          .toList()[i]),
-                                                  label:
-                                                      routes.keys.toList()[i],
-                                                ),
-                                            ],
-                                          ),
-                                        if (widget.children != null)
-                                          _Lane(
-                                            cupertinoDevice:
-                                                widget.cupertinoDevice,
-                                            androidDevice: widget.androidDevice,
-                                            orientation: widget.orientation,
-                                            laneBuilder: widget.laneBuilder,
-                                            title: widget?.childrenLabel ?? '',
-                                            scale: _scale,
-                                            size: size,
-                                            children: widget.children
-                                                .map((e) => _addChild(
-                                                      null,
-                                                      label: null,
-                                                      child: e,
-                                                      customWidget: true,
-                                                    ))
-                                                .toList(),
-                                            crossAxisCount:
-                                                widget.crossAxisCount,
-                                          ),
-                                        if (widget.customRoutes != null)
-                                          _Lane(
-                                            cupertinoDevice:
-                                                widget.cupertinoDevice,
-                                            androidDevice: widget.androidDevice,
-                                            orientation: widget.orientation,
-                                            laneBuilder: widget.laneBuilder,
-                                            title: 'Custom Routes',
-                                            scale: _scale,
-                                            size: size,
-                                            crossAxisCount:
-                                                widget.crossAxisCount,
-                                            children: [
-                                              for (var i = 0;
-                                                  i <
-                                                      widget
-                                                          .customRoutes.length;
-                                                  i++)
-                                                _addChild(
-                                                  widget.customRoutes[i],
-                                                  label: widget
-                                                      .customRoutes[i].name,
-                                                ),
-                                            ],
-                                          ),
-                                        if (widget.customLanes != null)
-                                          for (final lane in widget.customLanes)
-                                            _Lane(
-                                              cupertinoDevice:
-                                                  widget.cupertinoDevice,
-                                              androidDevice:
-                                                  widget.androidDevice,
-                                              orientation: widget.orientation,
-                                              laneBuilder: widget.laneBuilder,
-                                              title: lane.title,
-                                              scale: _scale,
-                                              size: size,
-                                              crossAxisCount:
-                                                  widget.crossAxisCount,
-                                              children: lane.children
-                                                  .map((e) => _addChild(
-                                                        null,
-                                                        label: e.label,
-                                                        child: e.child,
-                                                        customSize: e.size,
-                                                        customWidget: true,
-                                                      ))
-                                                  .toList(),
-                                            ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+              body: InteractiveViewer(
+                transformationController: _controller,
+                constrained: false,
+                minScale: _MINSCALE,
+                child: SizedBox(
+                  width: _MAXSIZE,
+                  height: _MAXSIZE,
+                  child: renderView(),
                 ),
               ),
             ),
@@ -775,86 +443,234 @@ class StoryboardController extends State<StoryBoard> {
     );
   }
 
-  Widget _buildAppBar([bool compact = false]) {
+  Widget renderView() {
+    return Stack(
+      fit: StackFit.expand,
+      // overflow: Overflow.visible,
+      clipBehavior: Clip.none,
+      children: [
+        if (widget._widgets)
+          Positioned(
+            top: _offset.dy,
+            left: _offset.dx,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.children != null)
+                  _Lane(
+                    cupertinoDevice: widget.cupertinoDevice,
+                    androidDevice: widget.androidDevice,
+                    orientation: widget.orientation,
+                    laneBuilder: widget.laneBuilder,
+                    title: widget.childrenLabel ?? '',
+                    scale: _scale,
+                    size: size,
+                    children: widget.children!
+                        .map(
+                          (e) => CustomScreen(
+                            size: size,
+                            child: e,
+                          ),
+                        )
+                        .toList(),
+                    crossAxisCount: widget.crossAxisCount,
+                    shadow: const BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(2, 2),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ),
+                if (widget.sizedChildren != null)
+                  _Lane(
+                    cupertinoDevice: widget.cupertinoDevice,
+                    androidDevice: widget.androidDevice,
+                    orientation: widget.orientation,
+                    laneBuilder: widget.laneBuilder,
+                    title: widget.sizedChildrenLabel ?? '',
+                    scale: _scale,
+                    size: size,
+                    children: widget.sizedChildren!,
+                    crossAxisCount: widget.crossAxisCount,
+                    shadow: const BoxShadow(
+                      color: Colors.black45,
+                      offset: Offset(2, 2),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ),
+                if (widget.customLanes != null)
+                  for (final lane in widget.customLanes!)
+                    _Lane(
+                      cupertinoDevice: widget.cupertinoDevice,
+                      androidDevice: widget.androidDevice,
+                      orientation: widget.orientation,
+                      laneBuilder: widget.laneBuilder,
+                      title: lane.title,
+                      scale: _scale,
+                      size: size,
+                      crossAxisCount: widget.crossAxisCount,
+                      children: lane.children,
+                      shadow: const BoxShadow(
+                        color: Colors.black45,
+                        offset: Offset(2, 2),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        if (!widget._widgets) ...[
+          Positioned(
+            top: _offset.dy,
+            left: _offset.dx,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Lane(
+                  cupertinoDevice: widget.cupertinoDevice,
+                  androidDevice: widget.androidDevice,
+                  orientation: widget.orientation,
+                  scale: _scale,
+                  title: 'Main',
+                  laneBuilder: widget.laneBuilder,
+                  size: size,
+                  crossAxisCount: widget.crossAxisCount,
+                  children: [
+                    if (initialRoute != null)
+                      _addChild(
+                        RouteSettings(name: initialRoute),
+                        label: 'Initial Route',
+                      ),
+                    if (home != null)
+                      _addChild(
+                        null,
+                        label: 'Home',
+                        child: home,
+                      ),
+                  ],
+                ),
+                if (routes != null)
+                  _Lane(
+                    cupertinoDevice: widget.cupertinoDevice,
+                    androidDevice: widget.androidDevice,
+                    orientation: widget.orientation,
+                    title: 'Routes',
+                    scale: _scale,
+                    laneBuilder: widget.laneBuilder,
+                    size: size,
+                    crossAxisCount: widget.crossAxisCount,
+                    children: [
+                      for (var i = 0; i < routes!.keys.length; i++)
+                        _addChild(
+                          RouteSettings(name: routes!.keys.toList()[i]),
+                          label: routes!.keys.toList()[i],
+                        ),
+                    ],
+                  ),
+                if (widget.children != null)
+                  _Lane(
+                    cupertinoDevice: widget.cupertinoDevice,
+                    androidDevice: widget.androidDevice,
+                    orientation: widget.orientation,
+                    laneBuilder: widget.laneBuilder,
+                    title: widget.childrenLabel ?? '',
+                    scale: _scale,
+                    size: size,
+                    children: widget.children!
+                        .map((e) => _addChild(
+                              null,
+                              label: null,
+                              child: e,
+                              customWidget: true,
+                            ))
+                        .toList(),
+                    crossAxisCount: widget.crossAxisCount,
+                  ),
+                if (widget.customRoutes != null)
+                  _Lane(
+                    cupertinoDevice: widget.cupertinoDevice,
+                    androidDevice: widget.androidDevice,
+                    orientation: widget.orientation,
+                    laneBuilder: widget.laneBuilder,
+                    title: 'Custom Routes',
+                    scale: _scale,
+                    size: size,
+                    crossAxisCount: widget.crossAxisCount,
+                    children: [
+                      for (var i = 0; i < widget.customRoutes!.length; i++)
+                        _addChild(
+                          widget.customRoutes![i],
+                          label: widget.customRoutes![i].name,
+                        ),
+                    ],
+                  ),
+                if (widget.customLanes != null)
+                  for (final lane in widget.customLanes!)
+                    _Lane(
+                      cupertinoDevice: widget.cupertinoDevice,
+                      androidDevice: widget.androidDevice,
+                      orientation: widget.orientation,
+                      laneBuilder: widget.laneBuilder,
+                      title: lane.title,
+                      scale: _scale,
+                      size: size,
+                      crossAxisCount: widget.crossAxisCount,
+                      children: lane.children
+                          .map((e) => _addChild(
+                                null,
+                                label: e.label,
+                                child: e.child,
+                                customSize: e.size,
+                                customWidget: true,
+                              ))
+                          .toList(),
+                    ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  PreferredSizeWidget? _buildAppBar([bool compact = false]) {
     const kRestartKey = 0;
     const kResetKey = 1;
     const kZoomInKey = 2;
     const kZoomOutKey = 4;
-    return widget.hideAppBar
-        ? null
-        : widget?.customAppBar ??
-            AppBar(
-              title: Text(_kTitle),
-              actions: compact
-                  ? [
-                      PopupMenuButton<int>(
-                        icon: Icon(Icons.more_vert),
-                        itemBuilder: (context) => [
-                          PopupMenuItem(
-                            value: kRestartKey,
-                            child: Text('Restart App'),
-                          ),
-                          PopupMenuItem(
-                            value: kResetKey,
-                            child: Text('Reset Defaults'),
-                          ),
-                          PopupMenuItem(
-                            value: kZoomInKey,
-                            child: Text('Zoom In'),
-                          ),
-                          PopupMenuItem(
-                            value: kZoomOutKey,
-                            child: Text('Zoom Out'),
-                          ),
-                        ],
-                        onSelected: (val) {
-                          if (val == kRestartKey) {
-                            restart();
-                          }
-                          if (val == kResetKey) {
-                            restore();
-                          }
-                          if (val == kZoomInKey) {
-                            updateScale(0.01);
-                          }
-                          if (val == kZoomOutKey) {
-                            updateScale(-0.01);
-                          }
-                        },
-                      ),
-                    ]
-                  : [
-                      IconButton(
-                        tooltip: 'Restart App',
-                        icon: Icon(Icons.refresh),
-                        onPressed: restart,
-                      ),
-                      IconButton(
-                        tooltip: 'Reset to Defaults',
-                        icon: Icon(Icons.restore),
-                        onPressed: restore,
-                      ),
-                      VerticalDivider(),
-                      IconButton(
-                        icon: Icon(Icons.remove),
-                        onPressed: () => updateScale(-0.01),
-                      ),
-                      InkWell(
-                        child:
-                            Center(child: Text('${(_scale * 100).round()}%')),
-                        onTap: () =>
-                            updateScale(widget?.initialScale ?? 0.75, true),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () => updateScale(0.01),
-                      ),
-                    ],
-            );
-  }
-
-  void restore() {
-    updateScale(widget?.initialScale ?? 0.75, true);
-    updateOffset(widget?.initialOffset ?? Offset(10, -_kSpacing), true);
+    if (widget.hideAppBar) {
+      return null;
+    } else {
+      return widget.customAppBar ??
+          AppBar(
+            title: const Text(_kTitle),
+            actions: compact
+                ? [
+                    PopupMenuButton<int>(
+                      icon: const Icon(Icons.more_vert),
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: kRestartKey,
+                          child: Text('Restart App'),
+                        ),
+                      ],
+                      onSelected: (val) {
+                        if (val == kRestartKey) {
+                          restart();
+                        }
+                      },
+                    ),
+                  ]
+                : [
+                    IconButton(
+                      tooltip: 'Restart App',
+                      icon: const Icon(Icons.refresh),
+                      onPressed: restart,
+                    ),
+                  ],
+          );
+    }
   }
 }

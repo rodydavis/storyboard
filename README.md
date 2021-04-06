@@ -1,12 +1,14 @@
 [![Buy Me A Coffee](https://img.shields.io/badge/Donate-Buy%20Me%20A%20Coffee-yellow.svg)](https://www.buymeacoffee.com/rodydavis)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=WSH3GVC49GNNJ)
-[![flutter_storyboard](https://img.shields.io/pub/v/flutter_storyboard.svg)](https://pub.dev/packages/flutter_storyboard)
+![github pages](https://github.com/rodydavis/storyboard/workflows/github%20pages/badge.svg)
+[![GitHub stars](https://img.shields.io/github/stars/rodydavis/storyboard?color=blue)](https://github.com/rodydavis/storyboard)
+[![storyboard](https://img.shields.io/pub/v/storyboard.svg)](https://pub.dev/packages/storyboard)
 
 # storyboard
 
 A Flutter Debug tool to see and test all your screens at once.
 
-Demo: https://rodydavis.github.io/storyboard/
+Online Demo: https://rodydavis.github.io/storyboard/
 
 ![screenshot](https://github.com/rodydavis/storyboard/blob/master/doc/screenshot.png?raw=true)
 

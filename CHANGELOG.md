@@ -1,3 +1,7 @@
+## 0.1.7
+
+* Upgrading dependencies
+
 ## 0.1.6
 
 * Removing screenBuilder
