@@ -1,3 +1,7 @@
+## 1.0.1-dev
+
+* Fixing metadata
+
 ## 1.0.0-dev
 
 * Switch to InteractiveViewer
