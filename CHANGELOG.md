@@ -1,3 +1,7 @@
+## 1.1.0
+
+* Switching to infinite canvas [package](https://pub.dev/packages/infinite_canvas)
+
 ## 1.0.1-dev
 
 * Fixing metadata

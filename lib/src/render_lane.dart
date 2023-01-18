@@ -60,10 +60,10 @@ class _Lane extends StatelessWidget {
     required this.scale,
     required this.androidDevice,
     required this.cupertinoDevice,
+    required this.size,
     this.title,
     this.itemBuilder,
     this.laneBuilder,
-    this.size,
     this.shadow,
     this.orientation = Orientation.portrait,
   }) : super(key: key);
@@ -77,11 +77,44 @@ class _Lane extends StatelessWidget {
   final Widget Function(BuildContext, Widget)? itemBuilder;
   final LaneBuilder? laneBuilder;
   final String? title;
-  final Size? size;
+  final Size size;
   final BoxShadow? shadow;
 
+  InfiniteCanvasNode toCanvasNode(Offset offset) {
+    return InfiniteCanvasNode(
+      key: UniqueKey(),
+      label: title,
+      offset: offset,
+      size: getMaxSize(),
+      builder: create,
+    );
+  }
+
+  Size getMaxSize() {
+    final _itemsPerRow = getItemsPerRow(children);
+    final _rows = getRows(children);
+    return Size(
+      _itemsPerRow * (this.size.width + _kSpacing),
+      _rows * (this.size.height + _kSpacing),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => create(context);
+
+  Widget create(BuildContext context) {
+    final _children = getChildren(context);
+    final _itemsPerRow = getItemsPerRow(_children);
+    final _rows = getRows(_children);
+    Widget _child;
+    _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
+    if (laneBuilder != null) {
+      return laneBuilder!(context, title, _child);
+    }
+    return _child;
+  }
+
+  List<CustomScreen> getChildren(BuildContext context) {
     List<CustomScreen> _children = [];
     for (final child in children) {
       if (itemBuilder != null) {
@@ -91,25 +124,31 @@ class _Lane extends StatelessWidget {
         _children.add(child);
       }
     }
-    int _itemsPerRow;
-    int _rows;
-    if (crossAxisCount != null) {
-      _rows = (_children.length / crossAxisCount!).ceil();
-      _itemsPerRow = crossAxisCount!;
-    } else {
-      _rows = 1;
-      _itemsPerRow = _children.length;
-    }
-    Widget _child;
-    _child = buildWrapLane(_rows, _children, _itemsPerRow, context);
-    if (laneBuilder != null) {
-      return laneBuilder!(context, title, _child);
-    }
-    return _child;
+    return _children;
   }
 
-  Widget buildWrapLane(int _rows, List<CustomScreen> _children,
-      int _itemsPerRow, BuildContext context) {
+  int getRows(List<CustomScreen> _children) {
+    int _rows = 1;
+    if (crossAxisCount != null) {
+      _rows = (_children.length / crossAxisCount!).ceil();
+    }
+    return _rows;
+  }
+
+  int getItemsPerRow(List<CustomScreen> _children) {
+    int _itemsPerRow = _children.length;
+    if (crossAxisCount != null) {
+      _itemsPerRow = crossAxisCount!;
+    }
+    return _itemsPerRow;
+  }
+
+  Widget buildWrapLane(
+    int _rows,
+    List<CustomScreen> _children,
+    int _itemsPerRow,
+    BuildContext context,
+  ) {
     return Container(
       margin: const EdgeInsets.all(_kSpacing / 2),
       child: Column(

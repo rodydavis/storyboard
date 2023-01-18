@@ -1,19 +1,18 @@
 name: flutter_storyboard
 description: A Flutter package to show a storyboard of all your widgets.
-version: 1.0.1-dev
-author: Rody Davis <rody.davis.jr@gmail.com>
+version: 1.1.0
 maintainer: Rody Davis (@rodydavis)
 homepage: https://github.com/rodydavis/plugins
 repository: https://github.com/rodydavis/storyboard
 
 environment:
-  sdk: '>=2.12.0-259.8.beta <3.0.0'
-  flutter: ^1.10.0
+  sdk: ">=3.0.0-76.0.dev <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  device_frame: ^0.4.0
+  device_frame: ^1.1.0
+  infinite_canvas: ^0.0.1
 
 dev_dependencies:
   flutter_test:

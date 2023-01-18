@@ -1,4 +1,4 @@
-package com.example.storyboards
+package com.example.example
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -23,13 +23,13 @@ class _MediaQueryObserverState extends State<MediaQueryObserver>
 
   @override
   void initState() {
-    WidgetsBinding.instance?.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
     super.initState();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance?.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -37,7 +37,7 @@ class _MediaQueryObserverState extends State<MediaQueryObserver>
   Widget build(BuildContext context) {
     return MediaQuery(
       data: widget.data ??
-          MediaQueryData.fromWindow(WidgetsBinding.instance!.window),
+          MediaQueryData.fromWindow(WidgetsBinding.instance.window),
       child: widget.child,
     );
   }

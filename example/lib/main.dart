@@ -1,20 +1,21 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_storyboard/flutter_storyboard.dart';
 import 'package:random_color/random_color.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StoryBoard.material(
       enabled: true,
       crossAxisCount: 7,
-      cupertinoDevice: Devices.ios.iPhone11,
-      screenSize: Size(400, 700),
+      cupertinoDevice: Devices.ios.iPhone13,
+      screenSize: const Size(400, 700),
       customScreens: [
         for (var i = 0; i < 25; i++)
           _generateScreen(
@@ -45,8 +46,8 @@ class MyApp extends StatelessWidget {
         // home: HomeScreen(),
         initialRoute: '/settings',
         routes: {
-          '/': (_) => HomeScreen(),
-          '/counter': (_) => CounterScreen(),
+          '/': (_) => const HomeScreen(),
+          '/counter': (_) => const CounterScreen(),
           '/settings': (_) => SettingsScreen(),
           for (var i = 0; i < 25; i++)
             '/screen_$i': (_) => _generateScreen(
@@ -69,14 +70,15 @@ class MyApp extends StatelessWidget {
 }
 
 Widget _generateScreen({
-  Text title,
-  FloatingActionButton fab,
-  Color color,
+  Text? title,
+  FloatingActionButton? fab,
+  Color? color,
 }) {
   return Builder(
     builder: (context) {
-      final Map<String, dynamic> args =
-          ModalRoute.of(context).settings.arguments;
+      final route = ModalRoute.of(context);
+      final settings = route?.settings;
+      final args = settings?.arguments as Map<String, dynamic>?;
       return Scaffold(
         appBar: AppBar(title: title),
         backgroundColor: color,
@@ -88,20 +90,20 @@ Widget _generateScreen({
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final _size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Screen'),
+        title: const Text('Home Screen'),
       ),
       body: Center(
         child: Text(_size.toString()),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.info),
+        child: const Icon(Icons.info),
         onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => SettingsScreen(),
@@ -113,7 +115,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 class CounterScreen extends StatefulWidget {
-  const CounterScreen({Key key}) : super(key: key);
+  const CounterScreen({super.key});
 
   @override
   _CounterScreenState createState() => _CounterScreenState();
@@ -125,13 +127,13 @@ class _CounterScreenState extends State<CounterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Counter Example'),
+        title: const Text('Counter Example'),
       ),
       body: Center(
         child: Text('Counter: $_counter'),
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
         onPressed: () {
           if (mounted)
             setState(() {
@@ -148,7 +150,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
+        title: const Text('Settings'),
       ),
       backgroundColor: Colors.blue.shade300,
     );
@@ -160,7 +162,7 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('About'),
+        title: const Text('About'),
       ),
       backgroundColor: Colors.purple.shade300,
     );
@@ -172,7 +174,7 @@ class UnknownScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('404'),
+        title: const Text('404'),
       ),
       backgroundColor: Colors.red.shade300,
     );

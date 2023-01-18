@@ -3,10 +3,12 @@ import 'package:flutter_storyboard/flutter_storyboard.dart';
 import 'package:random_color/random_color.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -26,9 +28,9 @@ class MyApp extends StatelessWidget {
 }
 
 Widget _generateScreen({
-  Text title,
-  FloatingActionButton fab,
-  Color color,
+  Text? title,
+  FloatingActionButton? fab,
+  Color? color,
 }) {
   return Builder(
     builder: (context) {

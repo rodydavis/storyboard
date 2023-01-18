@@ -3,10 +3,12 @@ import 'package:flutter_storyboard/flutter_storyboard.dart';
 import 'package:random_color/random_color.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StoryBoard(
@@ -15,7 +17,7 @@ class MyApp extends StatelessWidget {
       children: [
         for (var i = 0; i < 25; i++)
           SizedBox.fromSize(
-            size: Size(400, 700),
+            size: const Size(400, 700),
             child: _generateScreen(
               title: Text('Screen$i'),
               color: RandomColor(i).randomColor(),
@@ -27,14 +29,15 @@ class MyApp extends StatelessWidget {
 }
 
 Widget _generateScreen({
-  Text title,
-  FloatingActionButton fab,
-  Color color,
+  Text? title,
+  FloatingActionButton? fab,
+  Color? color,
 }) {
   return Builder(
     builder: (context) {
-      final Map<String, dynamic> args =
-          ModalRoute.of(context).settings.arguments;
+      final route = ModalRoute.of(context);
+      final settings = route?.settings;
+      final args = settings?.arguments as Map<String, dynamic>?;
       return Scaffold(
         appBar: AppBar(title: title),
         backgroundColor: color,

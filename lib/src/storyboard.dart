@@ -2,8 +2,8 @@ library storyboard;
 
 import 'package:device_frame/device_frame.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:infinite_canvas/infinite_canvas.dart';
 
 import 'custom_rect_clipper.dart';
 import 'media_query_observer.dart';
@@ -21,7 +21,10 @@ const double _STARTSCALE = 0.35;
 const _kTitle = 'Storyboard';
 
 typedef ScreenBuilder = Widget Function(
-    BuildContext context, RouteSettings route, Widget child);
+  BuildContext context,
+  RouteSettings route,
+  Widget child,
+);
 
 class StoryBoard extends StatefulWidget {
   const StoryBoard({
@@ -30,7 +33,7 @@ class StoryBoard extends StatefulWidget {
     this.customLanes,
     this.sizedChildren,
     bool showAppBar = false,
-    Size? childSize,
+    Size childSize = const Size(600, 800),
     this.initialOffset = Offset.zero,
     this.initialScale = _STARTSCALE,
     this.customAppBar,
@@ -200,7 +203,7 @@ class StoryBoard extends StatefulWidget {
   final double initialScale;
 
   /// Size for each screen
-  final Size? screenSize;
+  final Size screenSize;
 
   /// Wrap your Cupertino App with this widget
   final CupertinoApp? _cupertinoApp;
@@ -247,6 +250,7 @@ class StoryBoard extends StatefulWidget {
 class StoryboardController extends State<StoryBoard> {
   final TransformationController _controller = TransformationController();
   late FocusNode _focusNode;
+  late InfiniteCanvasController controller;
   Offset _offset = Offset.zero;
   double _scale = 1;
   UniqueKey _key = UniqueKey();
@@ -275,18 +279,243 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   void initState() {
     _focusNode = FocusNode();
     _controller.value.scale(widget.initialScale);
     final _offset = widget.initialOffset;
+    final size = this.size ?? Size(400, 800);
     _controller.value.translate(_offset.dx, _offset.dy);
+    controller = InfiniteCanvasController(nodes: [
+      // InfiniteCanvasNode(
+      //   key: UniqueKey(),
+      //   size: Size.square(1),
+      //   offset: Offset.zero,
+      //   builder: (context) => renderView(),
+      // ),
+    ]);
+    Offset _lastOffset = Offset.zero;
+    if (widget._widgets) {
+      if (widget.children != null) {
+        final lane = _Lane(
+          cupertinoDevice: widget.cupertinoDevice,
+          androidDevice: widget.androidDevice,
+          orientation: widget.orientation,
+          laneBuilder: widget.laneBuilder,
+          title: widget.childrenLabel ?? '',
+          scale: _scale,
+          size: size,
+          children: widget.children!
+              .map(
+                (e) => CustomScreen(
+                  size: size,
+                  child: e,
+                ),
+              )
+              .toList(),
+          crossAxisCount: widget.crossAxisCount,
+          shadow: const BoxShadow(
+            color: Colors.black45,
+            offset: Offset(2, 2),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        );
+        controller.add(lane.toCanvasNode(_lastOffset));
+        _lastOffset = _lastOffset.translate(
+          0,
+          lane.getMaxSize().height + _kSpacing,
+        );
+      }
+      if (widget.sizedChildren != null) {
+        final lane = _Lane(
+          cupertinoDevice: widget.cupertinoDevice,
+          androidDevice: widget.androidDevice,
+          orientation: widget.orientation,
+          laneBuilder: widget.laneBuilder,
+          title: widget.sizedChildrenLabel ?? '',
+          scale: _scale,
+          size: size,
+          children: widget.sizedChildren!,
+          crossAxisCount: widget.crossAxisCount,
+          shadow: const BoxShadow(
+            color: Colors.black45,
+            offset: Offset(2, 2),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        );
+        controller.add(lane.toCanvasNode(_lastOffset));
+        _lastOffset = _lastOffset.translate(
+          0,
+          lane.getMaxSize().height + _kSpacing,
+        );
+      }
+      if (widget.customLanes != null) {
+        for (final lane in widget.customLanes!) {
+          final newLane = _Lane(
+            cupertinoDevice: widget.cupertinoDevice,
+            androidDevice: widget.androidDevice,
+            orientation: widget.orientation,
+            laneBuilder: widget.laneBuilder,
+            title: lane.title,
+            scale: _scale,
+            size: size,
+            crossAxisCount: widget.crossAxisCount,
+            children: lane.children,
+            shadow: const BoxShadow(
+              color: Colors.black45,
+              offset: Offset(2, 2),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          );
+          controller.add(newLane.toCanvasNode(_lastOffset));
+          _lastOffset = _lastOffset.translate(
+            0,
+            newLane.getMaxSize().height + _kSpacing,
+          );
+        }
+      }
+    } else {
+      final rootLane = _Lane(
+        cupertinoDevice: widget.cupertinoDevice,
+        androidDevice: widget.androidDevice,
+        orientation: widget.orientation,
+        scale: _scale,
+        title: 'Main',
+        laneBuilder: widget.laneBuilder,
+        size: size,
+        crossAxisCount: widget.crossAxisCount,
+        children: [
+          if (initialRoute != null)
+            _addChild(
+              RouteSettings(name: initialRoute),
+              label: 'Initial Route',
+            ),
+          if (home != null)
+            _addChild(
+              null,
+              label: 'Home',
+              child: home,
+            ),
+        ],
+      );
+      controller.add(rootLane.toCanvasNode(_lastOffset));
+      _lastOffset = _lastOffset.translate(
+        0,
+        rootLane.getMaxSize().height + _kSpacing,
+      );
+
+      if (routes != null) {
+        final routesLane = _Lane(
+          cupertinoDevice: widget.cupertinoDevice,
+          androidDevice: widget.androidDevice,
+          orientation: widget.orientation,
+          title: 'Routes',
+          scale: _scale,
+          laneBuilder: widget.laneBuilder,
+          size: size,
+          crossAxisCount: widget.crossAxisCount,
+          children: [
+            for (var i = 0; i < routes!.keys.length; i++)
+              _addChild(
+                RouteSettings(name: routes!.keys.toList()[i]),
+                label: routes!.keys.toList()[i],
+              ),
+          ],
+        );
+        controller.add(routesLane.toCanvasNode(_lastOffset));
+        _lastOffset = _lastOffset.translate(
+          0,
+          routesLane.getMaxSize().height + _kSpacing,
+        );
+      }
+
+      if (widget.children != null) {
+        final childrenLane = _Lane(
+          cupertinoDevice: widget.cupertinoDevice,
+          androidDevice: widget.androidDevice,
+          orientation: widget.orientation,
+          laneBuilder: widget.laneBuilder,
+          title: widget.childrenLabel ?? '',
+          scale: _scale,
+          size: size,
+          children: widget.children!
+              .map((e) => _addChild(
+                    null,
+                    label: null,
+                    child: e,
+                    customWidget: true,
+                  ))
+              .toList(),
+          crossAxisCount: widget.crossAxisCount,
+        );
+        controller.add(childrenLane.toCanvasNode(_lastOffset));
+        _lastOffset = _lastOffset.translate(
+          0,
+          childrenLane.getMaxSize().height + _kSpacing,
+        );
+      }
+
+      if (widget.customRoutes != null) {
+        final customRoutesLane = _Lane(
+          cupertinoDevice: widget.cupertinoDevice,
+          androidDevice: widget.androidDevice,
+          orientation: widget.orientation,
+          laneBuilder: widget.laneBuilder,
+          title: 'Custom Routes',
+          scale: _scale,
+          size: size,
+          crossAxisCount: widget.crossAxisCount,
+          children: [
+            for (var i = 0; i < widget.customRoutes!.length; i++)
+              _addChild(
+                widget.customRoutes![i],
+                label: widget.customRoutes![i].name,
+              ),
+          ],
+        );
+        controller.add(customRoutesLane.toCanvasNode(_lastOffset));
+        _lastOffset = _lastOffset.translate(
+          0,
+          customRoutesLane.getMaxSize().height + _kSpacing,
+        );
+      }
+
+      if (widget.customLanes != null) {
+        for (final lane in widget.customLanes!) {
+          final newLane = _Lane(
+            cupertinoDevice: widget.cupertinoDevice,
+            androidDevice: widget.androidDevice,
+            orientation: widget.orientation,
+            laneBuilder: widget.laneBuilder,
+            title: lane.title,
+            scale: _scale,
+            size: size,
+            crossAxisCount: widget.crossAxisCount,
+            children: lane.children,
+            shadow: const BoxShadow(
+              color: Colors.black45,
+              offset: Offset(2, 2),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          );
+          controller.add(newLane.toCanvasNode(_lastOffset));
+          _lastOffset = _lastOffset.translate(
+            0,
+            newLane.getMaxSize().height + _kSpacing,
+          );
+        }
+      }
+    }
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
   }
 
   void restart() {
@@ -327,13 +556,10 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   Size? get size {
-    if (widget.screenSize != null) {
-      return Size(
-        widget.screenSize!.width,
-        widget.screenSize!.height + _kLabelHeight,
-      );
-    }
-    return null;
+    return Size(
+      widget.screenSize.width,
+      widget.screenSize.height + _kLabelHeight,
+    );
   }
 
   CustomScreen _addChild(
@@ -343,7 +569,7 @@ class StoryboardController extends State<StoryBoard> {
     bool customWidget = false,
     Size? customSize,
   }) {
-    final Size? _size = customSize ?? widget.screenSize ?? size;
+    final Size _size = customSize ?? widget.screenSize;
     return CustomScreen(
       size: size,
       child: _buildApp(_size, route, child, customWidget),
@@ -351,7 +577,7 @@ class StoryboardController extends State<StoryBoard> {
   }
 
   Widget _buildApp(
-    Size? _size,
+    Size _size,
     RouteSettings? route,
     Widget? child,
     bool customWidget,
@@ -379,36 +605,21 @@ class StoryboardController extends State<StoryBoard> {
   @override
   Widget build(BuildContext context) {
     if (!widget.enabled) return app;
-    // ignore: unnecessary_nullable_for_final_variable_declarations
-    final ThemeData? _theme = Theme.of(context);
     return MaterialApp(
       key: _key,
       debugShowCheckedModeBanner: false,
-      themeMode: materialApp?.themeMode ?? ThemeMode.system,
-      theme: materialApp?.theme ?? _theme ?? ThemeData.light(),
-      darkTheme: materialApp?.darkTheme ?? _theme ?? ThemeData.dark(),
-      // builder: (context, child) => MediaQueryObserver(
-      //   data: MediaQuery.of(context).copyWith(size: size),
-      //   child: child,
-      // ),
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: ThemeMode.system,
       home: Builder(
         builder: (context) => DeviceFrameTheme(
-          // style: Theme.of(context).brightness == Brightness.dark
-          //     ? DeviceFrameStyle.dark()
-          //     : DeviceFrameStyle.light(),
           style: widget.deviceFrameStyle ?? DeviceFrameStyle.dark(),
           child: LayoutBuilder(
             builder: (context, dimens) => Scaffold(
               appBar: _buildAppBar(dimens.maxWidth <= _kCompactBreakpoint),
-              body: InteractiveViewer(
-                transformationController: _controller,
-                constrained: false,
-                minScale: _MINSCALE,
-                child: SizedBox(
-                  width: _MAXSIZE,
-                  height: _MAXSIZE,
-                  child: renderView(),
-                ),
+              body: InfiniteCanvas(
+                minScale: 0.2,
+                controller: controller,
               ),
             ),
           ),
@@ -417,197 +628,197 @@ class StoryboardController extends State<StoryBoard> {
     );
   }
 
-  Widget renderView() {
-    return Stack(
-      fit: StackFit.expand,
-      // overflow: Overflow.visible,
-      clipBehavior: Clip.none,
-      children: [
-        if (widget._widgets)
-          Positioned(
-            top: _offset.dy,
-            left: _offset.dx,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.children != null)
-                  _Lane(
-                    cupertinoDevice: widget.cupertinoDevice,
-                    androidDevice: widget.androidDevice,
-                    orientation: widget.orientation,
-                    laneBuilder: widget.laneBuilder,
-                    title: widget.childrenLabel ?? '',
-                    scale: _scale,
-                    size: size,
-                    children: widget.children!
-                        .map(
-                          (e) => CustomScreen(
-                            size: size,
-                            child: e,
-                          ),
-                        )
-                        .toList(),
-                    crossAxisCount: widget.crossAxisCount,
-                    shadow: const BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(2, 2),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ),
-                if (widget.sizedChildren != null)
-                  _Lane(
-                    cupertinoDevice: widget.cupertinoDevice,
-                    androidDevice: widget.androidDevice,
-                    orientation: widget.orientation,
-                    laneBuilder: widget.laneBuilder,
-                    title: widget.sizedChildrenLabel ?? '',
-                    scale: _scale,
-                    size: size,
-                    children: widget.sizedChildren!,
-                    crossAxisCount: widget.crossAxisCount,
-                    shadow: const BoxShadow(
-                      color: Colors.black45,
-                      offset: Offset(2, 2),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    ),
-                  ),
-                if (widget.customLanes != null)
-                  for (final lane in widget.customLanes!)
-                    _Lane(
-                      cupertinoDevice: widget.cupertinoDevice,
-                      androidDevice: widget.androidDevice,
-                      orientation: widget.orientation,
-                      laneBuilder: widget.laneBuilder,
-                      title: lane.title,
-                      scale: _scale,
-                      size: size,
-                      crossAxisCount: widget.crossAxisCount,
-                      children: lane.children,
-                      shadow: const BoxShadow(
-                        color: Colors.black45,
-                        offset: Offset(2, 2),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ),
-              ],
-            ),
-          ),
-        if (!widget._widgets) ...[
-          Positioned(
-            top: _offset.dy,
-            left: _offset.dx,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Lane(
-                  cupertinoDevice: widget.cupertinoDevice,
-                  androidDevice: widget.androidDevice,
-                  orientation: widget.orientation,
-                  scale: _scale,
-                  title: 'Main',
-                  laneBuilder: widget.laneBuilder,
-                  size: size,
-                  crossAxisCount: widget.crossAxisCount,
-                  children: [
-                    if (initialRoute != null)
-                      _addChild(
-                        RouteSettings(name: initialRoute),
-                        label: 'Initial Route',
-                      ),
-                    if (home != null)
-                      _addChild(
-                        null,
-                        label: 'Home',
-                        child: home,
-                      ),
-                  ],
-                ),
-                if (routes != null)
-                  _Lane(
-                    cupertinoDevice: widget.cupertinoDevice,
-                    androidDevice: widget.androidDevice,
-                    orientation: widget.orientation,
-                    title: 'Routes',
-                    scale: _scale,
-                    laneBuilder: widget.laneBuilder,
-                    size: size,
-                    crossAxisCount: widget.crossAxisCount,
-                    children: [
-                      for (var i = 0; i < routes!.keys.length; i++)
-                        _addChild(
-                          RouteSettings(name: routes!.keys.toList()[i]),
-                          label: routes!.keys.toList()[i],
-                        ),
-                    ],
-                  ),
-                if (widget.children != null)
-                  _Lane(
-                    cupertinoDevice: widget.cupertinoDevice,
-                    androidDevice: widget.androidDevice,
-                    orientation: widget.orientation,
-                    laneBuilder: widget.laneBuilder,
-                    title: widget.childrenLabel ?? '',
-                    scale: _scale,
-                    size: size,
-                    children: widget.children!
-                        .map((e) => _addChild(
-                              null,
-                              label: null,
-                              child: e,
-                              customWidget: true,
-                            ))
-                        .toList(),
-                    crossAxisCount: widget.crossAxisCount,
-                  ),
-                if (widget.customRoutes != null)
-                  _Lane(
-                    cupertinoDevice: widget.cupertinoDevice,
-                    androidDevice: widget.androidDevice,
-                    orientation: widget.orientation,
-                    laneBuilder: widget.laneBuilder,
-                    title: 'Custom Routes',
-                    scale: _scale,
-                    size: size,
-                    crossAxisCount: widget.crossAxisCount,
-                    children: [
-                      for (var i = 0; i < widget.customRoutes!.length; i++)
-                        _addChild(
-                          widget.customRoutes![i],
-                          label: widget.customRoutes![i].name,
-                        ),
-                    ],
-                  ),
-                if (widget.customLanes != null)
-                  for (final lane in widget.customLanes!)
-                    _Lane(
-                      cupertinoDevice: widget.cupertinoDevice,
-                      androidDevice: widget.androidDevice,
-                      orientation: widget.orientation,
-                      laneBuilder: widget.laneBuilder,
-                      title: lane.title,
-                      scale: _scale,
-                      size: size,
-                      crossAxisCount: widget.crossAxisCount,
-                      children: lane.children
-                          .map((e) => _addChild(
-                                null,
-                                label: e.label,
-                                child: e.child,
-                                customSize: e.size,
-                                customWidget: true,
-                              ))
-                          .toList(),
-                    ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
+  // Widget renderView() {
+  //   return Stack(
+  //     fit: StackFit.expand,
+  //     // overflow: Overflow.visible,
+  //     clipBehavior: Clip.none,
+  //     children: [
+  //       if (widget._widgets)
+  //         Positioned(
+  //           top: _offset.dy,
+  //           left: _offset.dx,
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               if (widget.children != null)
+  //                 _Lane(
+  //                   cupertinoDevice: widget.cupertinoDevice,
+  //                   androidDevice: widget.androidDevice,
+  //                   orientation: widget.orientation,
+  //                   laneBuilder: widget.laneBuilder,
+  //                   title: widget.childrenLabel ?? '',
+  //                   scale: _scale,
+  //                   size: size,
+  //                   children: widget.children!
+  //                       .map(
+  //                         (e) => CustomScreen(
+  //                           size: size,
+  //                           child: e,
+  //                         ),
+  //                       )
+  //                       .toList(),
+  //                   crossAxisCount: widget.crossAxisCount,
+  //                   shadow: const BoxShadow(
+  //                     color: Colors.black45,
+  //                     offset: Offset(2, 2),
+  //                     blurRadius: 10,
+  //                     spreadRadius: 2,
+  //                   ),
+  //                 ),
+  //               if (widget.sizedChildren != null)
+  //                 _Lane(
+  //                   cupertinoDevice: widget.cupertinoDevice,
+  //                   androidDevice: widget.androidDevice,
+  //                   orientation: widget.orientation,
+  //                   laneBuilder: widget.laneBuilder,
+  //                   title: widget.sizedChildrenLabel ?? '',
+  //                   scale: _scale,
+  //                   size: size,
+  //                   children: widget.sizedChildren!,
+  //                   crossAxisCount: widget.crossAxisCount,
+  //                   shadow: const BoxShadow(
+  //                     color: Colors.black45,
+  //                     offset: Offset(2, 2),
+  //                     blurRadius: 10,
+  //                     spreadRadius: 2,
+  //                   ),
+  //                 ),
+  //               if (widget.customLanes != null)
+  //                 for (final lane in widget.customLanes!)
+  //                   _Lane(
+  //                     cupertinoDevice: widget.cupertinoDevice,
+  //                     androidDevice: widget.androidDevice,
+  //                     orientation: widget.orientation,
+  //                     laneBuilder: widget.laneBuilder,
+  //                     title: lane.title,
+  //                     scale: _scale,
+  //                     size: size,
+  //                     crossAxisCount: widget.crossAxisCount,
+  //                     children: lane.children,
+  //                     shadow: const BoxShadow(
+  //                       color: Colors.black45,
+  //                       offset: Offset(2, 2),
+  //                       blurRadius: 10,
+  //                       spreadRadius: 2,
+  //                     ),
+  //                   ),
+  //             ],
+  //           ),
+  //         ),
+  //       if (!widget._widgets) ...[
+  //         Positioned(
+  //           top: _offset.dy,
+  //           left: _offset.dx,
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               _Lane(
+  //                 cupertinoDevice: widget.cupertinoDevice,
+  //                 androidDevice: widget.androidDevice,
+  //                 orientation: widget.orientation,
+  //                 scale: _scale,
+  //                 title: 'Main',
+  //                 laneBuilder: widget.laneBuilder,
+  //                 size: size,
+  //                 crossAxisCount: widget.crossAxisCount,
+  //                 children: [
+  //                   if (initialRoute != null)
+  //                     _addChild(
+  //                       RouteSettings(name: initialRoute),
+  //                       label: 'Initial Route',
+  //                     ),
+  //                   if (home != null)
+  //                     _addChild(
+  //                       null,
+  //                       label: 'Home',
+  //                       child: home,
+  //                     ),
+  //                 ],
+  //               ),
+  //               if (routes != null)
+  //                 _Lane(
+  //                   cupertinoDevice: widget.cupertinoDevice,
+  //                   androidDevice: widget.androidDevice,
+  //                   orientation: widget.orientation,
+  //                   title: 'Routes',
+  //                   scale: _scale,
+  //                   laneBuilder: widget.laneBuilder,
+  //                   size: size,
+  //                   crossAxisCount: widget.crossAxisCount,
+  //                   children: [
+  //                     for (var i = 0; i < routes!.keys.length; i++)
+  //                       _addChild(
+  //                         RouteSettings(name: routes!.keys.toList()[i]),
+  //                         label: routes!.keys.toList()[i],
+  //                       ),
+  //                   ],
+  //                 ),
+  //               if (widget.children != null)
+  //                 _Lane(
+  //                   cupertinoDevice: widget.cupertinoDevice,
+  //                   androidDevice: widget.androidDevice,
+  //                   orientation: widget.orientation,
+  //                   laneBuilder: widget.laneBuilder,
+  //                   title: widget.childrenLabel ?? '',
+  //                   scale: _scale,
+  //                   size: size,
+  //                   children: widget.children!
+  //                       .map((e) => _addChild(
+  //                             null,
+  //                             label: null,
+  //                             child: e,
+  //                             customWidget: true,
+  //                           ))
+  //                       .toList(),
+  //                   crossAxisCount: widget.crossAxisCount,
+  //                 ),
+  //               if (widget.customRoutes != null)
+  //                 _Lane(
+  //                   cupertinoDevice: widget.cupertinoDevice,
+  //                   androidDevice: widget.androidDevice,
+  //                   orientation: widget.orientation,
+  //                   laneBuilder: widget.laneBuilder,
+  //                   title: 'Custom Routes',
+  //                   scale: _scale,
+  //                   size: size,
+  //                   crossAxisCount: widget.crossAxisCount,
+  //                   children: [
+  //                     for (var i = 0; i < widget.customRoutes!.length; i++)
+  //                       _addChild(
+  //                         widget.customRoutes![i],
+  //                         label: widget.customRoutes![i].name,
+  //                       ),
+  //                   ],
+  //                 ),
+  //               if (widget.customLanes != null)
+  //                 for (final lane in widget.customLanes!)
+  //                   _Lane(
+  //                     cupertinoDevice: widget.cupertinoDevice,
+  //                     androidDevice: widget.androidDevice,
+  //                     orientation: widget.orientation,
+  //                     laneBuilder: widget.laneBuilder,
+  //                     title: lane.title,
+  //                     scale: _scale,
+  //                     size: size,
+  //                     crossAxisCount: widget.crossAxisCount,
+  //                     children: lane.children
+  //                         .map((e) => _addChild(
+  //                               null,
+  //                               label: e.label,
+  //                               child: e.child,
+  //                               customSize: e.size,
+  //                               customWidget: true,
+  //                             ))
+  //                         .toList(),
+  //                   ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ],
+  //   );
+  // }
 
   PreferredSizeWidget? _buildAppBar([bool compact = false]) {
     const kRestartKey = 0;

@@ -38,7 +38,7 @@ class _NestedAppState extends State<NestedApp> {
 
   void setup() {
     _navKey = GlobalObjectKey<NavigatorState>(this);
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.route != null) {
         _navKey.currentState?.pushReplacementNamed(
           widget.route!.name!,
@@ -134,7 +134,7 @@ class _NestedAppState extends State<NestedApp> {
     return null;
   }
 
-  Map<LogicalKeySet, Intent>? get shortcuts {
+  Map<ShortcutActivator, Intent>? get shortcuts {
     if (widget.materialApp != null) return widget.materialApp?.shortcuts;
     if (widget.widgetsApp != null) return widget.widgetsApp?.shortcuts;
     if (widget.cupertinoApp != null) return widget.cupertinoApp?.shortcuts;
